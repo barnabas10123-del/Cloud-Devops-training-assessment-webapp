@@ -253,6 +253,14 @@
   .vi-key-esc{border-color:rgba(255,92,92,0.5); color:#ff9a9a;}
   .vi-key-colon{border-color:var(--teal); color:var(--teal);}
   .vi-giveup{text-align:right;}
+  .vi-save-shortcuts{margin:8px 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.12);}
+  .vi-save-title{font-family:var(--sans-c);font-size:11px;color:var(--teal);font-weight:600;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;}
+  .vi-save-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .vi-save-help{font-family:var(--sans-c);font-size:10.8px;color:var(--text-dim);line-height:1.5;margin-top:7px;}
+  .vi-save-help code{font-family:var(--mono);color:var(--amber);}
+  .vi-save-key{font-family:var(--mono);font-size:11px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:7px 10px;cursor:pointer;}
+  .vi-save-key:hover{border-color:var(--amber-dim);color:var(--amber);}
+  .vi-save-key.primary{border-color:var(--teal);color:var(--teal);}
   .vi-final{color:var(--text); background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:10px 12px; white-space:pre-wrap; font-family:var(--mono); font-size:12.5px; margin-bottom:8px;}
 
   /* ---- MCQ ---- */
@@ -377,6 +385,18 @@
     .stat .v{font-size:15px;}
     .btn-group{grid-template-columns:1fr;}
   }
+
+  /* ---- editor indentation + sample-output helpers ---- */
+  .editor-tools{display:flex;gap:7px;flex-wrap:wrap;margin:6px 0 8px;}
+  .editor-tool-btn{font-family:var(--sans-c);font-size:11.5px;font-weight:600;background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);border-radius:5px;padding:6px 10px;cursor:pointer;}
+  .editor-tool-btn:hover{border-color:var(--amber-dim);color:var(--amber);}
+  .sample-output-wrap{margin:8px 0 10px;}
+  .sample-output-panel{display:none;margin-top:7px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:9px 11px;}
+  .sample-output-panel.show{display:block;}
+  .sample-output-title{font-family:var(--sans-c);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);margin-bottom:6px;}
+  .sample-output-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);}
+  .indent-note{font-family:var(--sans-c);font-size:10.8px;color:var(--text-dim);margin-top:4px;}
+  @media(max-width:560px){.editor-tool-btn{min-height:38px;padding:8px 12px}.sample-output-pre{font-size:12px}}
 </style>
 </head>
 <body>
@@ -811,6 +831,7 @@ const QUESTIONS = [
    scenario:"The on-call runbook has a running log at notes.txt with two lines already in it. Open it in vi and append a new line at the very end reading exactly: Deployed v2.3 to prod — then save and quit.",
    hints:["Open the file the normal way first.", "Once inside: G jumps to the last line, then o opens a new line below it and drops you into insert mode. Type the line, Esc, then :wq.", "Try: vi notes.txt, then G, then o, type Deployed v2.3 to prod, Esc, :wq"],
    sample:"vi notes.txt → G → o → Deployed v2.3 to prod → Esc → :wq",
+   sampleOutput:"First deployment done.\nRollback tested.\nDeployed v2.3 to prod",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase());
@@ -827,6 +848,7 @@ const QUESTIONS = [
    scenario:"notes.txt has a typo on line 2 — it reads 'Rollbak tested.' but should read 'Rollback tested.' Fix that line in vi, then save and quit.",
    hints:["Move the cursor to line 2 first — click the line, or use j/k.", "i (or a) lets you rewrite the line's text in this simulator — fix the spelling and confirm.", "Try: vi notes.txt, move to line 2, i, correct the spelling, Enter to confirm, :wq"],
    sample:"vi notes.txt → move to line 2 → i → correct the spelling → :wq",
+   sampleOutput:"First deployment done.\nRollback tested.\nNext release: Friday.",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase());
@@ -840,6 +862,7 @@ const QUESTIONS = [
    scenario:"A stray debug line snuck into notes.txt — line 2 reads 'DEBUG: remove before merge'. Delete that whole line in vi, then save and quit.",
    hints:["Move the cursor to the offending line first.", "dd deletes the entire current line in one shot.", "Try: vi notes.txt, move to line 2, dd, :wq"],
    sample:"vi notes.txt → move to line 2 → dd → :wq",
+   sampleOutput:"First deployment done.\nRollback tested.",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase()).filter(l=>l.length>0);
@@ -851,6 +874,7 @@ const QUESTIONS = [
    scenario:"Write a short bash for-loop that iterates over every .log file in the current directory and echoes each filename.",
    hints:["Shape: for VAR in PATTERN; do ... ; done.", "The pattern is *.log, and each iteration you echo the loop variable.", "Try: for f in *.log; do echo $f; done"],
    sample:"for f in *.log; do echo $f; done",
+   sampleOutput:"app.log\nerror.log\naccess.log\n(example: one matching .log filename per line)",
    check: s => /^for\s+(\w+)\s+in\s+\*\.log\s*;?\s*do\s*;?\s*(?:echo\s+"?\$\{?\1\}?"?|printf\s+['\"]%s(?:\\n)?['\"]\s+"?\$\{?\1\}?"?)\s*;?\s*done$/.test(s),
    explain:"<b>for f in *.log; do echo $f; done</b> — the shell expands *.log into a word list first (filenames, not a live pattern match), then the loop walks it one filename at a time. Same logic works split across multiple lines with do/done on their own lines."},
 
@@ -858,6 +882,7 @@ const QUESTIONS = [
    scenario:"Write an if/else block that checks whether the variable $STATUS equals 'success' — echo OK if it does, FAILED otherwise.",
    hints:["Test syntax: if [ \"$VAR\" = \"value\" ]; then ... else ... fi — [[ ]] with == also works.", "Compare $STATUS to the string success, then echo OK or FAILED in the matching branch.", "Try: if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi"],
    sample:"if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi",
+   sampleOutput:"STATUS=success  →  OK\nSTATUS=failed   →  FAILED",
    check: s => /^if\s*\[{1,2}\s*"?\$\{?status\}?"?\s*==?\s*"?success"?\s*\]{1,2}\s*;?\s*then\s*;?\s*echo\s+"?ok"?\s*;?\s*else\s*;?\s*echo\s+"?failed"?\s*;?\s*fi$/.test(s),
    explain:"<b>if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi</b> — single brackets use = for string comparison (POSIX test); double brackets [[ ]] also allow ==. Quoting $STATUS protects against word-splitting if it's ever empty or has spaces."},
 
@@ -1070,6 +1095,7 @@ const QUESTIONS = [
    scenario:"You have a list: services = [\"nginx\", \"redis\", \"postgres\"]. Write a for loop that prints each service name.",
    hints:["Shape: for VAR in services: print(VAR)", "Python uses a colon to start the loop body, not 'do'/'done' like bash.", "Try: for s in services: print(s)"],
    sample:"for s in services:\n    print(s)",
+   sampleOutput:"nginx\nredis\npostgres",
    check: s => /^for\s+\w+\s+in\s+services\s*:\s*print\s*\(\s*\w+\s*\)$/i.test(s),
    explain:"<b>for s in services: print(s)</b> — Python's for loop iterates directly over the list's items (not indices), which is the idiomatic way to walk a collection."},
 
@@ -1077,6 +1103,7 @@ const QUESTIONS = [
    scenario:"Given numbers = [1, 2, 3, 4, 5, 6], write a one-line list comprehension that builds a new list, evens, containing only the even numbers.",
    hints:["Shape: [EXPR for VAR in ITERABLE if CONDITION]", "'Even' means n % 2 == 0.", "Try: evens = [n for n in numbers if n % 2 == 0]"],
    sample:"evens = [n for n in numbers if n % 2 == 0]",
+   sampleOutput:"evens == [2, 4, 6]",
    check: s => /^\w+\s*=\s*\[\s*\w+\s+for\s+\w+\s+in\s+numbers\s+if\s+\w+\s*%\s*2\s*==\s*0\s*\]$/i.test(s),
    explain:"<b>evens = [n for n in numbers if n % 2 == 0]</b> — a list comprehension filters and transforms in one line: for each n in numbers, keep it only if n % 2 == 0."},
 
@@ -1084,6 +1111,7 @@ const QUESTIONS = [
    scenario:"Write a function called is_even that takes one parameter n and returns True if n is even, False otherwise.",
    hints:["def is_even(n): ... — the return value can be the boolean expression itself.", "n % 2 == 0 is already True or False — you can return that directly instead of writing an if/else.", "Try: def is_even(n):\\n    return n % 2 == 0"],
    sample:"def is_even(n):\n    return n % 2 == 0",
+   sampleOutput:"is_even(4)  →  True\nis_even(5)  →  False",
    check: s => {
      if(!/def\s+is_even\s*\(\s*\w+\s*\)\s*:/i.test(s)) return false;
      if(/return\s+\w+\s*%\s*2\s*==\s*0/i.test(s)) return true;
@@ -1096,6 +1124,7 @@ const QUESTIONS = [
    scenario:"Given server_status = {\"web1\": \"up\", \"web2\": \"down\"}, write a for loop that prints each key and value on its own line, like 'web1: up'.",
    hints:["Dictionaries have a .items() method that gives you (key, value) pairs to unpack.", "Shape: for k, v in server_status.items(): print(...)", "Try: for k, v in server_status.items(): print(f\"{k}: {v}\")"],
    sample:"for k, v in server_status.items():\n    print(f\"{k}: {v}\")",
+   sampleOutput:"web1: up\nweb2: down",
    check: s => /for\s+\w+\s*,\s*\w+\s+in\s+server_status\.items\s*\(\s*\)\s*:/i.test(s) && /print\s*\(/i.test(s),
    explain:"<b>for k, v in server_status.items(): print(f\"{k}: {v}\")</b> — .items() gives you (key, value) tuples, which you can unpack directly into two loop variables."},
 
@@ -1103,6 +1132,7 @@ const QUESTIONS = [
    scenario:"Write a try/except block that attempts int(user_input), and prints 'Invalid number' if it raises a ValueError.",
    hints:["Shape: try: ... except ExceptionType: ...", "Converting a non-numeric string with int() raises specifically a ValueError.", "Try: try:\\n    int(user_input)\\nexcept ValueError:\\n    print(\"Invalid number\")"],
    sample:"try:\n    int(user_input)\nexcept ValueError:\n    print(\"Invalid number\")",
+   sampleOutput:"user_input = \"abc\"  →  Invalid number\nuser_input = \"42\"   →  (no error message)",
    check: s => /try\s*:/i.test(s) && /except\s+valueerror/i.test(s) && /int\s*\(\s*user_input\s*\)/i.test(s) && /print\s*\(/i.test(s),
    explain:"<b>try: int(user_input) except ValueError: print(\"Invalid number\")</b> — int() raises ValueError specifically when the string can't be parsed as a number, so catching that (rather than a bare except:) targets the actual failure mode without silently swallowing unrelated bugs."},
 ];
@@ -9573,6 +9603,7 @@ function renderQuestion(){
   resolved = false;
   const q = QUESTIONS[order[qIndex]];
   const isCode = (q.type === 'bash' || q.type === 'python');
+  const isVi = q.type === 'vi';
   const isMcq = q.type === 'mcq';
   termTitle.textContent = q.type === 'python' ? 'python3 — code challenge — 80x24' : (q.type === 'bash' ? 'bash — script challenge — 80x24' : (isMcq ? 'quiz — concept check — 80x24' : 'bash — ops-drill — 80x24'));
   statQNum.textContent = (qIndex+1) + ' / ' + order.length;
@@ -9589,12 +9620,14 @@ function renderQuestion(){
     const codeNoun = q.type === 'python' ? 'code' : 'script';
     const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
     interactionHtml =
-      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is tested by behavior/output — it does not need to resemble the sample. ' : 'Equivalent working shell forms are accepted. ') + 'Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
+      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is tested by behavior/output — it does not need to resemble the sample. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
-          ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>'
+          ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>' +
+            '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'cmdInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'cmdInput\')">⇤ Outdent</button></div>'
           : '<input type="text" id="cmdInput" class="cmd-input" placeholder="type the command…" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
+        ((isCode || isVi) && q.sampleOutput ? '<div class="sample-output-wrap"><button type="button" class="hint-btn" onclick="toggleSampleOutput()">▸ Show sample output</button><div id="sampleOutputPanel" class="sample-output-panel"><div class="sample-output-title">Expected result / sample output</div><pre id="sampleOutputPre" class="sample-output-pre"></pre></div></div>' : '') +
         '<div class="btn-group">' +
           '<button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button>' +
           '<button class="go-btn" id="submitBtn" onclick="submitAnswer()">' + (isCode ? 'Run ' + codeNoun + ' ▸' : 'Run ▸') + '</button>' +
@@ -9624,7 +9657,13 @@ function renderQuestion(){
     input.focus();
     if(isCode){
       input.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ submitAnswer(); }
+        if(e.key === 'Tab'){
+          e.preventDefault();
+          if(e.shiftKey) outdentEditor('cmdInput'); else indentEditor('cmdInput');
+          return;
+        }
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); submitAnswer(); return; }
+        if(e.key === 'Enter'){ autoIndentNewline(e, input, q.type); }
       });
     } else {
       input.addEventListener('keydown', (e)=>{
@@ -9632,6 +9671,76 @@ function renderQuestion(){
       });
     }
   }
+}
+
+function setEditorValuePreserve(el, value, start, end){
+  el.value = value;
+  el.selectionStart = start;
+  el.selectionEnd = end;
+  el.focus();
+}
+
+function indentEditor(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const value = el.value;
+  const start = el.selectionStart ?? 0;
+  const end = el.selectionEnd ?? start;
+  const lineStart = value.lastIndexOf('\n', Math.max(0,start-1)) + 1;
+  const selected = value.slice(lineStart, end);
+  if(selected.includes('\n')){
+    const indented = selected.replace(/^/gm, '    ');
+    const nv = value.slice(0,lineStart) + indented + value.slice(end);
+    setEditorValuePreserve(el, nv, start+4, end + (indented.length-selected.length));
+  } else {
+    const nv = value.slice(0,start) + '    ' + value.slice(end);
+    setEditorValuePreserve(el, nv, start+4, start+4);
+  }
+}
+
+function outdentEditor(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const value = el.value;
+  const start = el.selectionStart ?? 0;
+  const end = el.selectionEnd ?? start;
+  const lineStart = value.lastIndexOf('\n', Math.max(0,start-1)) + 1;
+  const segment = value.slice(lineStart, end);
+  const outdented = segment.replace(/^( {1,4}|\t)/gm, '');
+  const removed = segment.length - outdented.length;
+  if(removed === 0) return;
+  const nv = value.slice(0,lineStart) + outdented + value.slice(end);
+  const newStart = Math.max(lineStart, start - Math.min(4, Math.max(0,start-lineStart)));
+  setEditorValuePreserve(el, nv, newStart, Math.max(newStart, end-removed));
+}
+
+function autoIndentNewline(e, el, kind){
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  const value = el.value;
+  const before = value.slice(0,start);
+  const line = before.slice(before.lastIndexOf('\n')+1);
+  const base = (line.match(/^\s*/) || [''])[0];
+  let extra = '';
+  if(kind === 'python' && /:\s*(#.*)?$/.test(line)) extra = '    ';
+  if(kind === 'bash' && /\b(then|do|else)\s*;?\s*$/.test(line.trim())) extra = '    ';
+  e.preventDefault();
+  const insert = '\n' + base + extra;
+  const nv = value.slice(0,start) + insert + value.slice(end);
+  const pos = start + insert.length;
+  setEditorValuePreserve(el, nv, pos, pos);
+}
+
+function toggleSampleOutput(){
+  const q = QUESTIONS[order[qIndex]];
+  if(!q || !q.sampleOutput) return;
+  const panel = document.getElementById('sampleOutputPanel');
+  const pre = document.getElementById('sampleOutputPre');
+  if(!panel || !pre) return;
+  pre.textContent = q.sampleOutput;
+  panel.classList.toggle('show');
+  const btn = panel.previousElementSibling;
+  if(btn) btn.textContent = panel.classList.contains('show') ? '▾ Hide sample output' : '▸ Show sample output';
 }
 
 function showHint(){
@@ -10018,12 +10127,13 @@ function renderViUI(){
         '<span class="vi-editlabel">' + viState.editLabel + ':</span>' +
         '<input type="text" id="viLineInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeAttr(viState.editValue) + '">' +
       '</div>' +
-      '<div class="vi-hint">Enter to confirm this line · Esc to cancel</div>';
+      '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'viLineInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'viLineInput\')">⇤ Outdent</button></div>' +
+      '<div class="vi-hint">Enter to confirm this line · Esc to cancel · Tab / Shift+Tab also control indentation</div>';
   } else if(viState.mode === 'command'){
     bottomHtml =
       '<div class="vi-editrow">' +
         '<span class="vi-editlabel">:</span>' +
-        '<input type="text" id="viCmdInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="wq / q! / w">' +
+        '<input type="text" id="viCmdInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="w / wq / x / q!">' +
       '</div>' +
       '<div class="vi-hint">Enter to run · Esc to cancel</div>';
   } else {
@@ -10031,7 +10141,7 @@ function renderViUI(){
   }
 
   viArea.innerHTML =
-    '<div class="vi-editor">' +
+    '<div class="vi-editor" id="viEditorRoot" tabindex="0">' +
       '<div class="vi-titlebar">"' + q.viFile + '" (simulated vi) — line ' + (viState.cursorLine+1) + '/' + viState.buffer.length + '</div>' +
       '<div class="vi-buffer">' + linesHtml + '</div>' +
       bottomHtml +
@@ -10048,6 +10158,17 @@ function renderViUI(){
         '<button class="vi-key vi-key-esc" onclick="viCmd(\'Esc\')">Esc</button>' +
         '<button class="vi-key vi-key-colon" onclick="viCmd(\':\')">: command</button>' +
       '</div>' +
+      '<div class="vi-save-shortcuts">' +
+        '<div class="vi-save-title">Save / exit shortcuts</div>' +
+        '<div class="vi-save-row">' +
+          '<button class="vi-save-key" onclick="viQuickCommand(\'w\')">Esc → :w ↵</button>' +
+          '<button class="vi-save-key primary" onclick="viQuickCommand(\'wq\')">Esc → :wq ↵</button>' +
+          '<button class="vi-save-key primary" onclick="viQuickCommand(\'ZZ\')">ZZ · save + quit</button>' +
+          '<button class="vi-save-key" onclick="viQuickCommand(\'q!\')">Esc → :q! ↵</button>' +
+          '<button class="vi-save-key" onclick="viQuickCommand(\'ZQ\')">ZQ · quit, no save</button>' +
+        '</div>' +
+        '<div class="vi-save-help"><b>Real vi/vim:</b> <code>Esc</code> returns to Normal mode. Then <code>:w</code> + Enter saves, <code>:wq</code> + Enter saves and quits, and <code>ZZ</code> (capital Z twice, i.e. Shift+Z twice) saves and quits. <b>Shift+Esc is not the save shortcut.</b></div>' +
+      '</div>' +
       '<div class="vi-giveup"><button class="giveup-btn" onclick="viGiveUp()">Give up on this question</button></div>' +
     '</div>';
 
@@ -10061,6 +10182,12 @@ function renderViUI(){
     const el = document.getElementById('viCmdInput');
     el.focus();
     el.addEventListener('keydown', viCmdInputKey);
+  } else {
+    const root = document.getElementById('viEditorRoot');
+    if(root){
+      root.focus({preventScroll:true});
+      root.addEventListener('keydown', viNormalShortcutKey);
+    }
   }
 }
 
@@ -10095,7 +10222,62 @@ function viCmd(key){
   // Esc in normal mode is a no-op, same as real vi
 }
 
+
+let viPendingZ = false;
+
+function viQuickCommand(c){
+  if(!viState) return;
+  // These buttons represent the real Normal-mode save/quit sequences.
+  if(c === 'ZZ'){
+    const q = viState.question;
+    gradeVi(q.viCheck(viState.buffer.slice()));
+    return;
+  }
+  if(c === 'ZQ'){
+    exitViNoSave();
+    return;
+  }
+  runViCommand(c);
+}
+
+function viNormalShortcutKey(e){
+  if(!viState || viState.mode !== 'normal') return;
+
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    viPendingZ = false;
+    return;
+  }
+
+  // In real vi/vim, ZZ = save and quit, ZQ = quit without saving.
+  if(e.key === 'Z'){
+    e.preventDefault();
+    if(viPendingZ){
+      viPendingZ = false;
+      viQuickCommand('ZZ');
+    } else {
+      viPendingZ = true;
+      setTimeout(()=>{ viPendingZ = false; }, 1200);
+    }
+    return;
+  }
+
+  if(viPendingZ && e.key === 'Q'){
+    e.preventDefault();
+    viPendingZ = false;
+    viQuickCommand('ZQ');
+    return;
+  }
+
+  viPendingZ = false;
+}
+
 function viLineInputKey(e){
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    if(e.shiftKey) outdentEditor('viLineInput'); else indentEditor('viLineInput');
+    return;
+  }
   if(e.key === 'Enter'){
     e.preventDefault();
     const el = document.getElementById('viLineInput');
