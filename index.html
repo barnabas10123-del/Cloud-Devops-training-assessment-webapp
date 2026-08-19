@@ -435,7 +435,7 @@
         <button class="reset-btn" onclick="resetNotes()">Reset to original</button>
         <span class="save-msg" id="saveMsg">✓ saved</span>
       </div>
-      <div class="notes-note">Your uploaded notes are stored in this browser using localStorage, so they reload on the same browser/device. Each upload also regenerates a set of notes-derived MCQs from the new text, so fresh topics begin appearing in Full runthrough, Mixed, and MCQ-only challenges automatically. The curated command/Bash/Python coding questions remain in the bank as well.</div>
+      <div class="notes-note">Your uploaded notes are stored in this browser using localStorage, so they reload on the same browser/device. Each upload also rescans the document for technologies and section headings, regenerates notes-derived MCQs, and rebuilds the Topic-specific list automatically. New sections such as Docker, Jenkins, Terraform, AWS, Kubernetes, or other clear headings can therefore become selectable topics without editing this HTML. The curated command/Bash/Python coding questions remain in the bank as well.</div>
     </div>
   </div>
 
@@ -851,7 +851,7 @@ const QUESTIONS = [
    scenario:"Write a short bash for-loop that iterates over every .log file in the current directory and echoes each filename.",
    hints:["Shape: for VAR in PATTERN; do ... ; done.", "The pattern is *.log, and each iteration you echo the loop variable.", "Try: for f in *.log; do echo $f; done"],
    sample:"for f in *.log; do echo $f; done",
-   check: s => /^for\s+\w+\s+in\s+\*\.log\s*;?\s*do\s*;?\s*echo\s+"?\$\{?\w+\}?"?\s*;?\s*done$/.test(s),
+   check: s => /^for\s+(\w+)\s+in\s+\*\.log\s*;?\s*do\s*;?\s*(?:echo\s+"?\$\{?\1\}?"?|printf\s+['\"]%s(?:\\n)?['\"]\s+"?\$\{?\1\}?"?)\s*;?\s*done$/.test(s),
    explain:"<b>for f in *.log; do echo $f; done</b> — the shell expands *.log into a word list first (filenames, not a live pattern match), then the loop walks it one filename at a time. Same logic works split across multiple lines with do/done on their own lines."},
 
   {cat:"Editing & Scripting", pts:25, type:"bash",
@@ -1008,7 +1008,7 @@ const QUESTIONS = [
    scenario:"Write a for loop using \"$@\" that echoes each positional argument passed to the script, one per line.",
    hints:["Loop shape: for VAR in \"$@\"; do ... ; done", "Quote $@ so multi-word arguments stay intact as single items.", "Try: for arg in \"$@\"; do echo \"$arg\"; done"],
    sample:"for arg in \"$@\"; do echo \"$arg\"; done",
-   check: s => /^for\s+\w+\s+in\s+"?\$@"?\s*;?\s*do\s*;?\s*echo\s+"?\$\{?\w+\}?"?\s*;?\s*done$/.test(s),
+   check: s => /^for\s+(\w+)\s+in\s+"\$@"\s*;?\s*do\s*;?\s*(?:echo\s+"?\$\{?\1\}?"?|printf\s+['\"]%s(?:\\n)?['\"]\s+"?\$\{?\1\}?"?)\s*;?\s*done$/.test(s),
    explain:"<b>for arg in \"$@\"; do echo \"$arg\"; done</b> — quoting \"$@\" keeps each argument as its own word even if it contains spaces, which is why it's preferred over $* for looping over arguments."},
 
   /* ---------------------------- Python Fundamentals (MCQ) ---------------------------- */
@@ -9251,47 +9251,135 @@ function tweakFact(fact, mode){
   return 'The opposite is true: ' + out;
 }
 
+const TOPIC_RULES = [
+  {name:'Python', re:/\bpython\b|\bdef\s+\w+\s*\(|list comprehension|\bdictionary\b|\btuple\b|frozenset|valueerror|\blegb\b|\b__\w+__\b/i},
+  {name:'Bash Scripting', re:/\bbash\b|shell scripting|\bshebang\b|\[\[|\$[@*?!#$0-9]|positional argument|exit status|\(\(/i},
+  {name:'Docker', re:/\bdocker\b|dockerfile|docker compose|container image|\bcontainer(s|ization)?\b/i},
+  {name:'Kubernetes', re:/\bkubernetes\b|\bk8s\b|\bkubectl\b|\bpod(s)?\b|deployment|serviceaccount|configmap|\bingress\b/i},
+  {name:'Terraform', re:/\bterraform\b|\bterraform\s+(init|plan|apply|destroy)\b|\b\.tf\b|\bprovider\b.*\bresource\b/i},
+  {name:'Ansible', re:/\bansible\b|\bplaybook\b|\binventory\b|\bansible-playbook\b/i},
+  {name:'Jenkins', re:/\bjenkins\b|jenkinsfile|\bpipeline\b.*\bstage\b/i},
+  {name:'CI/CD', re:/\bci\/?cd\b|continuous integration|continuous delivery|continuous deployment|build pipeline|deployment pipeline/i},
+  {name:'Git', re:/\bgit\b|github|gitlab|\bcommit\b|\bbranch\b|\bmerge\b|\brebase\b|pull request/i},
+  {name:'AWS', re:/\baws\b|amazon web services|\bec2\b|\bs3\b|\biam\b|\bvpc\b|cloudwatch|lambda|route 53|elastic load balancer|\belb\b/i},
+  {name:'Cloud & Virtualization', re:/public cloud|private cloud|hybrid cloud|\bcloud\b|virtual machine|\bvm\b|hypervisor|bare metal|virtualization/i},
+  {name:'Linux Networking', re:/\bnetwork(ing)?\b|\bip addr\b|\bip route\b|\bping\b|\bnetstat\b|\bss\b|\bcurl\b|\bwget\b|\bdns\b|\bport\b|\bfirewall\b/i},
+  {name:'SSH', re:/\bssh\b|secure shell|\.pem\b|authorized_keys|known_hosts/i},
+  {name:'Linux Permissions', re:/\bchmod\b|\bchown\b|\bchgrp\b|permission(s)?|read write execute|\bumask\b/i},
+  {name:'Linux Processes', re:/\bprocess(es)?\b|\bps\b|\btop\b|\bhtop\b|\bkill\b|\bpkill\b|\bnice\b|\brenice\b|signal/i},
+  {name:'Users & Groups', re:/\buser(add|mod|del)?\b|\bgroup(add|mod|del)?\b|\bpasswd\b|\buid\b|\bgid\b|\/etc\/passwd|\/etc\/group/i},
+  {name:'Package Management', re:/\bapt\b|\byum\b|\bdnf\b|package manager|install package|repository/i},
+  {name:'Systemd & Services', re:/\bsystemctl\b|\bsystemd\b|\bjournalctl\b|\bservice\b|daemon/i},
+  {name:'Storage & Filesystems', re:/filesystem|file system|\bmount\b|\bumount\b|\bdf\b|\bdu\b|\blsblk\b|\bblkid\b|\binode\b|\bext4\b|\bxfs\b|\blvm\b|\bswap\b/i},
+  {name:'Linux Commands', re:/\bpwd\b|\bls\b|\bcd\b|\bmkdir\b|\btouch\b|\bcp\b|\bmv\b|\brm\b|\bfind\b|\bgrep\b|\bawk\b|\bsed\b|\btar\b/i},
+  {name:'SQL & Databases', re:/\bsql\b|database|\bselect\b.*\bfrom\b|\bjoin\b|primary key|foreign key|mysql|postgres/i},
+  {name:'Monitoring & Logs', re:/monitoring|observability|\blog(s|ging)?\b|metrics|alerting|prometheus|grafana|cloudwatch/i},
+  {name:'Security', re:/\bsecurity\b|encryption|authentication|authorization|least privilege|secret(s)?|credential(s)?|vulnerabilit/i}
+];
+
+function detectKnownTopic(line){
+  for(const rule of TOPIC_RULES){ if(rule.re.test(line)) return rule.name; }
+  return null;
+}
+
+function cleanHeading(line){
+  return line
+    .replace(/^\s*(?:chapter|section|part)?\s*\d+(?:\.\d+)*\s*[:.)-]?\s*/i,'')
+    .replace(/^[-•#*]+\s*/,'')
+    .replace(/\s+[-–—]\s+(reference\s+)?notes.*$/i,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function headingCandidate(line){
+  const t=cleanHeading(line);
+  if(!t || t.length<3 || t.length>70) return null;
+  if(/[.!?]$/.test(t)) return null;
+  if(/^(example|examples|output|syntax|copy|note|notes|summary|key takeaways|interview questions?)$/i.test(t)) return null;
+  const words=t.split(/\s+/);
+  if(words.length>9) return null;
+  // Prefer lines that look like titles, not prose sentences.
+  const titleish = /^[A-Z0-9][A-Za-z0-9 &/+().:_-]*$/.test(t) ||
+                   words.filter(w=>/^[A-Z][A-Za-z0-9/+()._-]*$/.test(w)).length >= Math.ceil(words.length*0.6);
+  return titleish ? t : null;
+}
+
+function normalizeDynamicTopic(title){
+  const known=detectKnownTopic(title);
+  if(known) return known;
+  let t=cleanHeading(title)
+    .replace(/\b(interview|reference|detailed|complete|common|basic|advanced|introduction to)\b/ig,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  if(!t || t.length<3) return null;
+  // Keep automatically-created buttons readable on phone.
+  if(t.length>34) t=t.slice(0,34).replace(/\s+\S*$/,'').trim();
+  return t;
+}
+
 function classifyNoteLine(line, current){
-  const l=line.toLowerCase();
-  if(/python|\bdef\b|list comprehension|dictionary|tuple|frozenset|exception|valueerror|\blegb\b/.test(l)) return 'Python';
-  if(/bash|shell|shebang|\[\[|\$[@*?!#$0-9]|positional argument|exit status|\(\(/.test(l)) return 'Bash Scripting';
-  return current || 'Notes Review';
+  return detectKnownTopic(line) || current || 'Notes Review';
 }
 
 function buildAutoQuestions(text){
   const rawLines = text.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
   const seen=new Set();
-  const buckets={'Python':[],'Bash Scripting':[],'Notes Review':[]};
+  const buckets={};
   let currentCat='Notes Review';
 
   for(const line0 of rawLines){
     let line=line0.replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim();
-    if(!line || line.length < 18 || line.length > 190) continue;
-    if(/^python\b/i.test(line) && line.length < 90) currentCat='Python';
-    else if(/^(bash|shell)\b/i.test(line) && line.length < 90) currentCat='Bash Scripting';
+    if(!line) continue;
+
+    // A short heading changes the active topic. Known technologies win;
+    // otherwise a genuine heading becomes its own selectable topic.
+    const heading=headingCandidate(line);
+    if(heading){
+      const nextTopic=normalizeDynamicTopic(heading);
+      if(nextTopic) currentCat=nextTopic;
+    }
+
+    if(line.length < 18 || line.length > 190) continue;
     const cat=classifyNoteLine(line,currentCat);
-    const factLike = /\b(is|are|means|stands for|used to|returns?|cannot|can |supports?|stores?|prints?|shows?|defines?|allows?|requires?|equals?)\b/i.test(line) || /\b[-]{1,2}[a-zA-Z]+\b/.test(line);
+    const factLike = /\b(is|are|means|stands for|used to|returns?|cannot|can |supports?|stores?|prints?|shows?|defines?|allows?|requires?|equals?|used for|provides?|contains?|creates?|runs?|executes?|compiles?|interprets?)\b/i.test(line) || /\b[-]{1,2}[a-zA-Z]+\b/.test(line);
     if(!factLike) continue;
-    const key=line.toLowerCase();
+    const key=(cat+'|'+line).toLowerCase();
     if(seen.has(key)) continue;
     seen.add(key);
-    (buckets[cat] || buckets['Notes Review']).push(line);
+    if(!buckets[cat]) buckets[cat]=[];
+    buckets[cat].push(line);
   }
 
-  const chosen=[];
-  const take=(cat,n)=>{
-    const arr=buckets[cat] || [];
-    if(!arr.length) return;
-    const step=Math.max(1,Math.floor(arr.length/n));
-    for(let i=0;i<arr.length && chosen.filter(x=>x.cat===cat).length<n;i+=step){
-      chosen.push({cat,line:arr[i]});
-    }
-  };
-  take('Python',12);
-  take('Bash Scripting',10);
-  take('Notes Review',10);
+  // Remove noisy one-off inferred headings unless they have enough material.
+  // Known technology topics are allowed with one fact so a newly-added topic
+  // can appear immediately after an upload.
+  const knownNames=new Set(TOPIC_RULES.map(r=>r.name));
+  const cats=Object.keys(buckets).filter(cat => knownNames.has(cat) || cat==='Notes Review' || buckets[cat].length>=2);
 
-  return chosen.slice(0,32).map(({cat,line})=>{
+  const chosen=[];
+  const maxAuto=48;
+  // First pass: guarantee coverage so every useful detected topic can become
+  // a selectable button (up to the overall safety cap).
+  for(const cat of cats){
+    if(chosen.length>=maxAuto) break;
+    if(buckets[cat].length) chosen.push({cat,line:buckets[cat][0]});
+  }
+  // Second pass: round-robin extra questions so large topics do not crowd out
+  // new smaller topics.
+  let depth=1, added=true;
+  while(chosen.length<maxAuto && added){
+    added=false;
+    for(const cat of cats){
+      if(chosen.length>=maxAuto) break;
+      if(buckets[cat] && buckets[cat][depth]){
+        chosen.push({cat,line:buckets[cat][depth]});
+        added=true;
+      }
+    }
+    depth++;
+  }
+
+  return chosen.map(({cat,line})=>{
     const distractors=[];
     for(let mode=1; distractors.length<3 && mode<12; mode++){
       let d=tweakFact(line,mode);
@@ -9308,13 +9396,15 @@ function buildAutoQuestions(text){
     return {cat,pts:10,type:'mcq',auto:true,scenario:'Which statement matches your latest uploaded notes?',options,correctId,hints:['One option preserves the wording and meaning from your notes; the others contain a changed detail.','Look for changes such as not/never, swapped data types, reversed order, or altered numeric values.'],sample:line,explain:'<b>From your uploaded notes:</b> '+escapeHtml(line)};
   });
 }
-
 function refreshQuestionBank(text){
   const generated=buildAutoQuestions(text);
   QUESTIONS.splice(0,QUESTIONS.length,...BASE_QUESTIONS,...generated);
   autoQuestionCount=generated.length;
   ALL_CATS=[...new Set(QUESTIONS.map(q=>q.cat))];
-  if(setupState && setupState.scope==='topic' && !ALL_CATS.includes(setupState.topic)) setupState.topic=ALL_CATS[0];
+  if(setupState && setupState.scope==='topic'){
+    setupState.topics = (setupState.topics || []).filter(t => ALL_CATS.includes(t));
+    if(setupState.topics.length === 0 && ALL_CATS.length) setupState.topics = [ALL_CATS[0]];
+  }
 }
 
 /* ============================= STATE ============================= */
@@ -9330,7 +9420,7 @@ const MAX_ATTEMPTS = 3;
 let totalPossible = 0;
 let catScores = {};
 let ALL_CATS = [...new Set(QUESTIONS.map(q => q.cat))];
-let setupState = { scope: 'full', topic: null, style: 'mix' };
+let setupState = { scope: 'full', topics: [], style: 'mix' };
 
 const termBody = document.getElementById('termBody');
 const statQNum = document.getElementById('statQNum');
@@ -9358,7 +9448,7 @@ function pipsHtml(){
 function filteredIndices(state){
   return QUESTIONS.map((q,i)=>i).filter(i=>{
     const q = QUESTIONS[i];
-    if(state.scope === 'topic' && state.topic && q.cat !== state.topic) return false;
+    if(state.scope === 'topic' && (!state.topics || state.topics.length === 0 || !state.topics.includes(q.cat))) return false;
     if(state.style === 'code' && q.type === 'mcq') return false;
     if(state.style === 'mcq' && q.type !== 'mcq') return false;
     return true;
@@ -9378,12 +9468,19 @@ function renderSetup(){
           '<div class="t">Full runthrough challenge</div><div class="d">Linux + Bash + Python + notes-derived review, all shuffled</div>' +
         '</button>' +
         '<button type="button" class="setup-opt' + (setupState.scope==='topic' ? ' sel' : '') + '" onclick="setSetupScope(\'topic\')">' +
-          '<div class="t">Topic-specific challenge</div><div class="d">Choose Python, Bash, Linux topics, and more</div>' +
+          '<div class="t">Topic-specific challenge</div><div class="d">Choose one or multiple topics — Python, Bash, Linux, and more</div>' +
         '</button>' +
       '</div>' +
       (setupState.scope === 'topic'
-        ? '<div class="setup-grid" style="margin-top:8px;">' +
-            ALL_CATS.map(c => '<button type="button" class="setup-opt' + (setupState.topic===c ? ' sel' : '') + '" onclick="setSetupTopic(decodeURIComponent(\'' + encodeURIComponent(c) + '\'))"><div class="t">' + escapeHtml(c) + '</div></button>').join('') +
+        ? '<div style="margin-top:8px;">' +
+            '<div class="setup-sub" style="margin:0 0 8px;">Select as many topics as you want.</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
+              '<button type="button" class="reset-btn" onclick="selectAllTopics()">Select all</button>' +
+              '<button type="button" class="reset-btn" onclick="clearTopics()">Clear</button>' +
+            '</div>' +
+            '<div class="setup-grid">' +
+              ALL_CATS.map(c => '<button type="button" class="setup-opt' + ((setupState.topics||[]).includes(c) ? ' sel' : '') + '" onclick="toggleSetupTopic(decodeURIComponent(\'' + encodeURIComponent(c) + '\'))"><div class="t">' + (((setupState.topics||[]).includes(c)) ? '✓ ' : '') + escapeHtml(c) + '</div></button>').join('') +
+            '</div>' +
           '</div>'
         : '') +
     '</div>';
@@ -9425,12 +9522,22 @@ function renderSetup(){
 
 function setSetupScope(scope){
   setupState.scope = scope;
-  if(scope === 'full'){ setupState.topic = null; }
-  else if(!setupState.topic){ setupState.topic = ALL_CATS[0]; }
+  if(scope === 'full'){ setupState.topics = []; }
+  else if(!setupState.topics || setupState.topics.length === 0){ setupState.topics = ALL_CATS.length ? [ALL_CATS[0]] : []; }
   renderSetup();
 }
-function setSetupTopic(topic){
-  setupState.topic = topic;
+function toggleSetupTopic(topic){
+  if(!setupState.topics) setupState.topics = [];
+  if(setupState.topics.includes(topic)) setupState.topics = setupState.topics.filter(t => t !== topic);
+  else setupState.topics.push(topic);
+  renderSetup();
+}
+function selectAllTopics(){
+  setupState.topics = [...ALL_CATS];
+  renderSetup();
+}
+function clearTopics(){
+  setupState.topics = [];
   renderSetup();
 }
 function setSetupStyle(style){
@@ -9482,7 +9589,7 @@ function renderQuestion(){
     const codeNoun = q.type === 'python' ? 'code' : 'script';
     const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
     interactionHtml =
-      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
+      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is tested by behavior/output — it does not need to resemble the sample. ' : 'Equivalent working shell forms are accepted. ') + 'Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
@@ -9584,7 +9691,144 @@ function youTypedHtml(raw, isCode){
   return '<div class="youtyped">you typed: <span>' + escapeHtml(raw) + '</span></div>';
 }
 
-function submitAnswer(){
+/* ============================= BEHAVIOR-BASED PYTHON GRADING ============================= */
+let pythonWorker = null;
+let pythonWorkerReady = false;
+let pythonWorkerSeq = 0;
+const pythonPending = new Map();
+
+function pythonTestId(q){
+  if(q.type !== 'python') return null;
+  if(q.scenario.includes('services = ["nginx", "redis", "postgres"]')) return 'services_loop';
+  if(q.scenario.includes('numbers = [1, 2, 3, 4, 5, 6]')) return 'evens';
+  if(q.scenario.includes('function called is_even')) return 'is_even';
+  if(q.scenario.includes('server_status = {"web1": "up", "web2": "down"}')) return 'server_status';
+  if(q.scenario.includes('attempts int(user_input)')) return 'value_error';
+  return null;
+}
+
+function getPythonWorker(){
+  if(pythonWorker) return pythonWorker;
+  const workerSource = String.raw`
+    let pyodide = null;
+    async function ensurePyodide(){
+      if(pyodide) return pyodide;
+      importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js');
+      pyodide = await loadPyodide({indexURL:'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/'});
+      return pyodide;
+    }
+    self.onmessage = async (e) => {
+      const {id, code, testId} = e.data;
+      try {
+        const py = await ensurePyodide();
+        py.globals.set('USER_CODE', code);
+        py.globals.set('TEST_ID', testId);
+        const resultJson = await py.runPythonAsync(String.raw\`
+import io, contextlib, json, traceback
+result = {"pass": False, "message": "The code ran, but its result did not meet the task."}
+env = {}
+try:
+    if TEST_ID == "services_loop":
+        env["services"] = ["nginx", "redis", "postgres"]
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exec(USER_CODE, env)
+        lines = [x.strip() for x in buf.getvalue().splitlines() if x.strip()]
+        result["pass"] = lines == ["nginx", "redis", "postgres"]
+        result["message"] = "Expected the three service names, one per line. Got: " + repr(lines)
+
+    elif TEST_ID == "evens":
+        env["numbers"] = [1, 2, 3, 4, 5, 6]
+        exec(USER_CODE, env)
+        got = env.get("evens", None)
+        result["pass"] = got == [2, 4, 6]
+        result["message"] = "Expected evens == [2, 4, 6]. Got: " + repr(got)
+
+    elif TEST_ID == "is_even":
+        exec(USER_CODE, env)
+        fn = env.get("is_even")
+        tests = [(2, True), (3, False), (0, True), (-4, True), (-5, False)]
+        ok = callable(fn) and all(fn(x) is expected for x, expected in tests)
+        result["pass"] = ok
+        result["message"] = "is_even() must return the correct Boolean for positive, zero, and negative integers."
+
+    elif TEST_ID == "server_status":
+        env["server_status"] = {"web1": "up", "web2": "down"}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exec(USER_CODE, env)
+        lines = [x.strip() for x in buf.getvalue().splitlines() if x.strip()]
+        result["pass"] = lines == ["web1: up", "web2: down"]
+        result["message"] = "Expected: web1: up and web2: down, each on its own line. Got: " + repr(lines)
+
+    elif TEST_ID == "value_error":
+        env["user_input"] = "not-a-number"
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exec(USER_CODE, env)
+        out = buf.getvalue().strip()
+        result["pass"] = "Invalid number" in out
+        result["message"] = "With user_input='not-a-number', the code must handle ValueError and print 'Invalid number'. Got: " + repr(out)
+    else:
+        result["message"] = "No executable test is configured for this Python question."
+except Exception as ex:
+    result["pass"] = False
+    result["message"] = type(ex).__name__ + ": " + str(ex)
+json.dumps(result)
+        \`);
+        self.postMessage({id, ok:true, result:JSON.parse(resultJson)});
+      } catch(err) {
+        self.postMessage({id, ok:false, error:String(err && err.message ? err.message : err)});
+      }
+    };
+  `;
+  const blob = new Blob([workerSource], {type:'application/javascript'});
+  pythonWorker = new Worker(URL.createObjectURL(blob));
+  pythonWorker.onmessage = (e) => {
+    const pending = pythonPending.get(e.data.id);
+    if(!pending) return;
+    pythonPending.delete(e.data.id);
+    pending.resolve(e.data);
+  };
+  pythonWorker.onerror = (e) => {
+    for(const [,pending] of pythonPending) pending.reject(e);
+    pythonPending.clear();
+    pythonWorker.terminate();
+    pythonWorker = null;
+  };
+  return pythonWorker;
+}
+
+function runPythonBehaviorTest(q, code){
+  const testId = pythonTestId(q);
+  if(!testId) return Promise.resolve({ok:false, noTest:true});
+  return new Promise((resolve, reject) => {
+    const id = ++pythonWorkerSeq;
+    pythonPending.set(id, {resolve, reject});
+    getPythonWorker().postMessage({id, code, testId});
+    setTimeout(() => {
+      if(!pythonPending.has(id)) return;
+      pythonPending.delete(id);
+      resolve({ok:false, timeout:true, error:'Python runner timed out'});
+    }, 30000);
+  });
+}
+
+async function gradeAnswerByBehavior(q, raw, normalized){
+  // MCQs are graded by their selected answer. vi questions are validated by final buffer state.
+  if(q.type === 'python'){
+    const result = await runPythonBehaviorTest(q, raw);
+    if(result.ok) return {pass: !!result.result.pass, detail: result.result.message, behavior:true};
+    // If the external Python runtime cannot load (for example when offline), preserve the
+    // older structural checker as a fallback instead of making the quiz unusable.
+    return {pass: q.check(normalized), detail: result.error || 'Python runtime unavailable; used offline fallback checker.', behavior:false, fallback:true};
+  }
+  // Shell/command questions already use goal-oriented validators rather than comparing
+  // against q.sample. The sample is only a reference answer.
+  return {pass: q.check(normalized), detail:'', behavior:true};
+}
+
+async function submitAnswer(){
   if(resolved) return;
   const q = QUESTIONS[order[qIndex]];
   const isCode = (q.type === 'bash' || q.type === 'python');
@@ -9593,10 +9837,20 @@ function submitAnswer(){
   if(raw.trim() === '') { input.focus(); return; }
 
   const n = q.type === 'bash' ? normalizeScript(raw) : q.type === 'python' ? normalizePyScript(raw) : normalize(raw);
-  const pass = q.check(n);
   const outputArea = document.getElementById('outputArea');
   const feedbackArea = document.getElementById('feedbackArea');
-  const acceptedLabel = q.type === 'python' ? 'code accepted' : q.type === 'bash' ? 'script accepted' : 'command accepted';
+  const acceptedLabel = q.type === 'python' ? 'code accepted by output tests' : q.type === 'bash' ? 'script accepted' : 'command accepted';
+  const submitBtn = document.getElementById('submitBtn');
+  const oldBtnText = submitBtn ? submitBtn.textContent : '';
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = q.type === 'python' ? 'Testing output…' : 'Checking…'; }
+  let grading;
+  try {
+    grading = await gradeAnswerByBehavior(q, raw, n);
+  } catch(err) {
+    grading = {pass:false, detail:String(err), behavior:false};
+  }
+  if(submitBtn && !resolved){ submitBtn.disabled = false; submitBtn.textContent = oldBtnText; }
+  const pass = grading.pass;
 
   if(pass){
     if(q.type === 'vi'){
@@ -9608,6 +9862,7 @@ function submitAnswer(){
       '<div class="output-block">' +
         youTypedHtml(raw, isCode) +
         '<div class="verdict pass">✔ PASS — ' + acceptedLabel + ' (attempt ' + (attempts+1) + ' of ' + MAX_ATTEMPTS + ')</div>' +
+        (q.type === 'python' && grading.behavior ? '<div class="feedback-line">✓ Your code was executed against hidden output/return-value tests. It does not have to match the notes.</div>' : '') +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
@@ -9631,7 +9886,7 @@ function submitAnswer(){
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
   } else {
-    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ Not quite — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. Try again.</div>';
+    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ Not quite — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. ' + (grading.detail ? escapeHtml(grading.detail) + ' ' : '') + 'Try again.</div>';
     // auto-reveal the next hint on a wrong attempt
     if(hintsShown < attempts){
       showHint();
@@ -10029,7 +10284,7 @@ async function saveNotes(){
   try{
     localStorage.setItem('linux-devops-notes', notesArea.value);
     refreshQuestionBank(notesArea.value);
-    msg.textContent = '✓ saved + quiz refreshed (' + autoQuestionCount + ' auto MCQs)';
+    msg.textContent = '✓ saved + quiz refreshed (' + ALL_CATS.length + ' topics, ' + autoQuestionCount + ' auto MCQs)';
     msg.classList.add('show');
     setTimeout(()=>msg.classList.remove('show'), 2200);
   }catch(e){
@@ -10066,7 +10321,7 @@ async function handleDocxUpload(evt){
     }
     notesArea.value = text;
     await saveNotes();
-    statusEl.textContent = '✓ Notes + quiz refreshed from ' + file.name + ' (' + new Date().toLocaleDateString() + '). Added ' + autoQuestionCount + ' notes-derived MCQs; curated Linux/Bash/Python hands-on questions remain available.';
+    statusEl.textContent = '✓ Notes + quiz refreshed from ' + file.name + ' (' + new Date().toLocaleDateString() + '). Detected ' + ALL_CATS.length + ' selectable topics and added ' + autoQuestionCount + ' notes-derived MCQs.';
   }catch(e){
     statusEl.textContent = '⚠ Could not read that file — try re-saving it from Word and uploading again.';
   }
