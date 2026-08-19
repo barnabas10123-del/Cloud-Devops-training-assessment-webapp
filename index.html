@@ -403,7 +403,7 @@
 <div class="scanlines"></div>
 <div class="wrap">
 
-  <div class="boot" id="bootLine">booting ops-drill v2.0 ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
+  <div class="boot" id="bootLine">booting ops-drill v2.4 — behavior grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
 
   <div class="header">
     <div class="brand">
@@ -9923,14 +9923,71 @@ function runPythonBehaviorTest(q, code){
   });
 }
 
+
+function pythonSemanticFallback(q, raw){
+  const testId = pythonTestId(q);
+  const code = raw.replace(/\r/g,'');
+
+  if(testId === 'services_loop'){
+    // Accept any loop-variable name as long as the same variable is printed.
+    const m = code.match(/for\s+([A-Za-z_]\w*)\s+in\s+services\s*:\s*(?:\n[ \t]+|[ \t]+)print\s*\(\s*([A-Za-z_]\w*)\s*\)/i);
+    return !!(m && m[1].toLowerCase() === m[2].toLowerCase());
+  }
+
+  if(testId === 'evens'){
+    // Accept common correct approaches, not just one list-comprehension spelling.
+    if(/\bevens\s*=\s*\[\s*([A-Za-z_]\w*)\s+for\s+\1\s+in\s+numbers\s+if\s+\1\s*%\s*2\s*==\s*0\s*\]/i.test(code)) return true;
+    if(/\bevens\s*=\s*\[\s*\]/i.test(code) &&
+       /for\s+([A-Za-z_]\w*)\s+in\s+numbers\s*:/i.test(code) &&
+       /%\s*2\s*==\s*0/i.test(code) &&
+       /evens\.append\s*\(/i.test(code)) return true;
+    return false;
+  }
+
+  if(testId === 'is_even'){
+    if(!/def\s+is_even\s*\(\s*([A-Za-z_]\w*)\s*\)\s*:/i.test(code)) return false;
+    const p = code.match(/def\s+is_even\s*\(\s*([A-Za-z_]\w*)\s*\)/i)?.[1];
+    if(!p) return false;
+    const esc = p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    if(new RegExp('return\\s+'+esc+'\\s*%\\s*2\\s*==\\s*0','i').test(code)) return true;
+    if(new RegExp('if\\s+'+esc+'\\s*%\\s*2\\s*==\\s*0\\s*:','i').test(code) &&
+       /return\s+True/i.test(code) && /return\s+False/i.test(code)) return true;
+    return false;
+  }
+
+  if(testId === 'server_status'){
+    const m = code.match(/for\s+([A-Za-z_]\w*)\s*,\s*([A-Za-z_]\w*)\s+in\s+server_status\.items\s*\(\s*\)\s*:/i);
+    if(!m || !/print\s*\(/i.test(code)) return false;
+    // Accept f-strings, .format(), concatenation, comma-separated print, etc.
+    return code.includes(m[1]) && code.includes(m[2]);
+  }
+
+  if(testId === 'value_error'){
+    return /try\s*:/i.test(code) &&
+           /int\s*\(\s*user_input\s*\)/i.test(code) &&
+           /except\s+ValueError/i.test(code) &&
+           /print\s*\(\s*['"]Invalid number['"]\s*\)/i.test(code);
+  }
+
+  return q.check(normalizePyScript(raw));
+}
+
+
 async function gradeAnswerByBehavior(q, raw, normalized){
   // MCQs are graded by their selected answer. vi questions are validated by final buffer state.
   if(q.type === 'python'){
     const result = await runPythonBehaviorTest(q, raw);
     if(result.ok) return {pass: !!result.result.pass, detail: result.result.message, behavior:true};
-    // If the external Python runtime cannot load (for example when offline), preserve the
-    // older structural checker as a fallback instead of making the quiz unusable.
-    return {pass: q.check(normalized), detail: result.error || 'Python runtime unavailable; used offline fallback checker.', behavior:false, fallback:true};
+    // If Pyodide cannot load (offline, CDN blocked, mobile/WebView restriction),
+    // use a semantic fallback that deliberately ignores arbitrary identifier names
+    // and accepts multiple valid solution shapes.
+    const fallbackPass = pythonSemanticFallback(q, raw);
+    return {
+      pass: fallbackPass,
+      detail: (result.error || 'Python runtime unavailable') + ' — semantic offline grader used instead.',
+      behavior:false,
+      fallback:true
+    };
   }
   // Shell/command questions already use goal-oriented validators rather than comparing
   // against q.sample. The sample is only a reference answer.
@@ -9971,7 +10028,11 @@ async function submitAnswer(){
       '<div class="output-block">' +
         youTypedHtml(raw, isCode) +
         '<div class="verdict pass">✔ PASS — ' + acceptedLabel + ' (attempt ' + (attempts+1) + ' of ' + MAX_ATTEMPTS + ')</div>' +
-        (q.type === 'python' && grading.behavior ? '<div class="feedback-line">✓ Your code was executed against hidden output/return-value tests. It does not have to match the notes.</div>' : '') +
+        (q.type === 'python' && grading.behavior
+          ? '<div class="feedback-line">✓ Your code was executed against hidden output/return-value tests. Variable names and implementation style do not have to match the notes.</div>'
+          : (q.type === 'python' && grading.fallback
+            ? '<div class="feedback-line">✓ Python runtime was unavailable, so the semantic fallback grader was used. Arbitrary variable names and equivalent solution forms are accepted.</div>'
+            : '')) +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
@@ -9990,7 +10051,8 @@ async function submitAnswer(){
       '<div class="output-block">' +
         youTypedHtml(raw, isCode) +
         '<div class="verdict fail">✘ FAIL — out of attempts</div>' +
-        '<div class="sample">A correct answer was: <code>' + escapeHtml(q.sample) + '</code></div>' +
+        (q.type === 'python' && grading.detail ? '<div class="feedback-line retry">Grader: ' + escapeHtml(grading.detail) + '</div>' : '') +
+        '<div class="sample">One reference solution is: <code>' + escapeHtml(q.sample) + '</code></div>' +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
