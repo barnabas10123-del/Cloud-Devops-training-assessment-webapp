@@ -397,13 +397,25 @@
   .sample-output-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);}
   .indent-note{font-family:var(--sans-c);font-size:10.8px;color:var(--text-dim);margin-top:4px;}
   @media(max-width:560px){.editor-tool-btn{min-height:38px;padding:8px 12px}.sample-output-pre{font-size:12px}}
+
+  .runtime-output-wrap{margin:8px 0 10px;}
+  .runtime-output-panel{display:none;margin-top:7px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:10px 11px;}
+  .runtime-output-panel.show{display:block;}
+  .runtime-block-title{font-family:var(--sans-c);font-size:10.8px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);margin:8px 0 5px;}
+  .runtime-block-title:first-child{margin-top:0;}
+  .runtime-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);background:rgba(255,255,255,.018);border:1px solid var(--line);border-radius:5px;padding:8px 9px;}
+  .runtime-match{margin-top:8px;font-family:var(--sans-c);font-size:12px;font-weight:600;}
+  .runtime-match.pass{color:var(--green);}
+  .runtime-match.fail{color:var(--red);}
+  .runtime-match.neutral{color:var(--text-dim);}
+
 </style>
 </head>
 <body>
 <div class="scanlines"></div>
 <div class="wrap">
 
-  <div class="boot" id="bootLine">booting ops-drill v2.4 — behavior grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
+  <div class="boot" id="bootLine">booting ops-drill v2.5 — runtime output grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
 
   <div class="header">
     <div class="brand">
@@ -1091,7 +1103,7 @@ const QUESTIONS = [
    explain:"Python is fully case-sensitive — myVar, MyVar, and myvar are three distinct identifiers, and keywords/built-ins must match their defined case exactly (True, not true; print, not Print)."},
 
   /* ---------------------------- Python coding ---------------------------- */
-  {cat:"Python", pts:15, type:"python",
+  {cat:"Python", pts:15, type:"python", testId:"services_loop",
    scenario:"You have a list: services = [\"nginx\", \"redis\", \"postgres\"]. Write a for loop that prints each service name.",
    hints:["Shape: for VAR in services: print(VAR)", "Python uses a colon to start the loop body, not 'do'/'done' like bash.", "Try: for s in services: print(s)"],
    sample:"for s in services:\n    print(s)",
@@ -1099,7 +1111,7 @@ const QUESTIONS = [
    check: s => /^for\s+\w+\s+in\s+services\s*:\s*print\s*\(\s*\w+\s*\)$/i.test(s),
    explain:"<b>for s in services: print(s)</b> — Python's for loop iterates directly over the list's items (not indices), which is the idiomatic way to walk a collection."},
 
-  {cat:"Python", pts:20, type:"python",
+  {cat:"Python", pts:20, type:"python", testId:"evens",
    scenario:"Given numbers = [1, 2, 3, 4, 5, 6], write a one-line list comprehension that builds a new list, evens, containing only the even numbers.",
    hints:["Shape: [EXPR for VAR in ITERABLE if CONDITION]", "'Even' means n % 2 == 0.", "Try: evens = [n for n in numbers if n % 2 == 0]"],
    sample:"evens = [n for n in numbers if n % 2 == 0]",
@@ -1107,7 +1119,7 @@ const QUESTIONS = [
    check: s => /^\w+\s*=\s*\[\s*\w+\s+for\s+\w+\s+in\s+numbers\s+if\s+\w+\s*%\s*2\s*==\s*0\s*\]$/i.test(s),
    explain:"<b>evens = [n for n in numbers if n % 2 == 0]</b> — a list comprehension filters and transforms in one line: for each n in numbers, keep it only if n % 2 == 0."},
 
-  {cat:"Python", pts:20, type:"python",
+  {cat:"Python", pts:20, type:"python", testId:"is_even",
    scenario:"Write a function called is_even that takes one parameter n and returns True if n is even, False otherwise.",
    hints:["def is_even(n): ... — the return value can be the boolean expression itself.", "n % 2 == 0 is already True or False — you can return that directly instead of writing an if/else.", "Try: def is_even(n):\\n    return n % 2 == 0"],
    sample:"def is_even(n):\n    return n % 2 == 0",
@@ -1120,7 +1132,7 @@ const QUESTIONS = [
    },
    explain:"<b>def is_even(n): return n % 2 == 0</b> — the comparison n % 2 == 0 already evaluates to True or False, so returning it directly is cleaner than an if/else that just returns True or False in each branch."},
 
-  {cat:"Python", pts:20, type:"python",
+  {cat:"Python", pts:20, type:"python", testId:"server_status",
    scenario:"Given server_status = {\"web1\": \"up\", \"web2\": \"down\"}, write a for loop that prints each key and value on its own line, like 'web1: up'.",
    hints:["Dictionaries have a .items() method that gives you (key, value) pairs to unpack.", "Shape: for k, v in server_status.items(): print(...)", "Try: for k, v in server_status.items(): print(f\"{k}: {v}\")"],
    sample:"for k, v in server_status.items():\n    print(f\"{k}: {v}\")",
@@ -1128,7 +1140,7 @@ const QUESTIONS = [
    check: s => /for\s+\w+\s*,\s*\w+\s+in\s+server_status\.items\s*\(\s*\)\s*:/i.test(s) && /print\s*\(/i.test(s),
    explain:"<b>for k, v in server_status.items(): print(f\"{k}: {v}\")</b> — .items() gives you (key, value) tuples, which you can unpack directly into two loop variables."},
 
-  {cat:"Python", pts:25, type:"python",
+  {cat:"Python", pts:25, type:"python", testId:"value_error",
    scenario:"Write a try/except block that attempts int(user_input), and prints 'Invalid number' if it raises a ValueError.",
    hints:["Shape: try: ... except ExceptionType: ...", "Converting a non-numeric string with int() raises specifically a ValueError.", "Try: try:\\n    int(user_input)\\nexcept ValueError:\\n    print(\"Invalid number\")"],
    sample:"try:\n    int(user_input)\nexcept ValueError:\n    print(\"Invalid number\")",
@@ -9620,14 +9632,18 @@ function renderQuestion(){
     const codeNoun = q.type === 'python' ? 'code' : 'script';
     const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
     interactionHtml =
-      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is tested by behavior/output — it does not need to resemble the sample. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
+      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is executed in the challenge's test environment; grading is based on output/state/return behavior, not matching the sample syntax. Use “Run / show my output” to test the code currently in the box without consuming an attempt. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
           ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>' +
             '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'cmdInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'cmdInput\')">⇤ Outdent</button></div>'
           : '<input type="text" id="cmdInput" class="cmd-input" placeholder="type the command…" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
-        ((isCode || isVi) && q.sampleOutput ? '<div class="sample-output-wrap"><button type="button" class="hint-btn" onclick="toggleSampleOutput()">▸ Show sample output</button><div id="sampleOutputPanel" class="sample-output-panel"><div class="sample-output-title">Expected result / sample output</div><pre id="sampleOutputPre" class="sample-output-pre"></pre></div></div>' : '') +
+        (q.type === 'python'
+          ? '<div class="runtime-output-wrap"><button type="button" class="hint-btn" id="previewPythonBtn" onclick="showMyPythonOutput()">▶ Run / show my output</button><div id="runtimeOutputPanel" class="runtime-output-panel"></div></div>'
+          : (((q.type === 'bash' || isVi) && q.sampleOutput)
+            ? '<div class="sample-output-wrap"><button type="button" class="hint-btn" onclick="toggleSampleOutput()">▸ View expected result</button><div id="sampleOutputPanel" class="sample-output-panel"><div class="sample-output-title">Expected result</div><pre id="sampleOutputPre" class="sample-output-pre"></pre></div></div>'
+            : '')) +
         '<div class="btn-group">' +
           '<button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button>' +
           '<button class="go-btn" id="submitBtn" onclick="submitAnswer()">' + (isCode ? 'Run ' + codeNoun + ' ▸' : 'Run ▸') + '</button>' +
@@ -9740,8 +9756,66 @@ function toggleSampleOutput(){
   pre.textContent = q.sampleOutput;
   panel.classList.toggle('show');
   const btn = panel.previousElementSibling;
-  if(btn) btn.textContent = panel.classList.contains('show') ? '▾ Hide sample output' : '▸ Show sample output';
+  if(btn) btn.textContent = panel.classList.contains('show') ? '▾ Hide expected result' : '▸ View expected result';
 }
+
+
+async function showMyPythonOutput(){
+  const q = QUESTIONS[order[qIndex]];
+  if(!q || q.type !== 'python') return;
+  const input = document.getElementById('cmdInput');
+  const panel = document.getElementById('runtimeOutputPanel');
+  const btn = document.getElementById('previewPythonBtn');
+  if(!input || !panel || !btn) return;
+
+  const code = input.value;
+  if(!code.trim()){
+    panel.className = 'runtime-output-panel show';
+    panel.innerHTML = '<div class="runtime-match neutral">Type some Python first, then run the preview.</div>';
+    input.focus();
+    return;
+  }
+
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Running your code…';
+  panel.className = 'runtime-output-panel show';
+  panel.innerHTML = '<div class="runtime-match neutral">Executing the code currently in the editor…</div>';
+
+  let result;
+  try{
+    result = await runPythonBehaviorTest(q, code);
+  }catch(err){
+    result = {ok:false, error:String(err)};
+  }
+
+  btn.disabled = false;
+  btn.textContent = oldText;
+
+  if(result && result.ok && result.result){
+    const r = result.result;
+    panel.innerHTML =
+      '<div class="runtime-block-title">Your code produced</div>' +
+      '<pre class="runtime-pre">' + escapeHtml(r.actual || '(no output/result)') + '</pre>' +
+      '<div class="runtime-block-title">Desired result</div>' +
+      '<pre class="runtime-pre">' + escapeHtml(r.expected || q.sampleOutput || '(not configured)') + '</pre>' +
+      '<div class="runtime-match ' + (r.pass ? 'pass' : 'fail') + '">' +
+        (r.pass ? '✓ MATCH — this behavior satisfies the challenge.' : '✘ NOT YET A MATCH — compare your result with the desired result above.') +
+      '</div>' +
+      (r.logic ? '<div class="vi-hint" style="margin-top:7px">' + escapeHtml(r.logic) + '</div>' : '');
+    return;
+  }
+
+  // If the Python runtime cannot load, do not pretend we executed the code.
+  // Show a clear runtime message instead of falling back to an "expected answer".
+  panel.innerHTML =
+    '<div class="runtime-match fail">Could not execute Python in this browser right now.</div>' +
+    '<div class="vi-hint" style="margin-top:7px">' +
+      escapeHtml((result && result.error) || 'Python runtime unavailable.') +
+      ' The Submit button can still use the semantic fallback, but this preview only labels something as output when the code was actually executed.' +
+    '</div>';
+}
+
 
 function showHint(){
   const q = QUESTIONS[order[qIndex]];
@@ -9808,6 +9882,7 @@ const pythonPending = new Map();
 
 function pythonTestId(q){
   if(q.type !== 'python') return null;
+  if(q.testId) return q.testId;
   if(q.scenario.includes('services = ["nginx", "redis", "postgres"]')) return 'services_loop';
   if(q.scenario.includes('numbers = [1, 2, 3, 4, 5, 6]')) return 'evens';
   if(q.scenario.includes('function called is_even')) return 'is_even';
@@ -9834,55 +9909,130 @@ function getPythonWorker(){
         py.globals.set('TEST_ID', testId);
         const resultJson = await py.runPythonAsync(String.raw\`
 import io, contextlib, json, traceback
-result = {"pass": False, "message": "The code ran, but its result did not meet the task."}
+result = {
+    "pass": False,
+    "message": "The code ran, but its behavior did not meet the task.",
+    "actual": "",
+    "expected": "",
+    "stdout": "",
+    "logic": ""
+}
 env = {}
+
+def clean_lines(s):
+    return [x.rstrip() for x in s.splitlines() if x.strip()]
+
 try:
     if TEST_ID == "services_loop":
         env["services"] = ["nginx", "redis", "postgres"]
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             exec(USER_CODE, env)
-        lines = [x.strip() for x in buf.getvalue().splitlines() if x.strip()]
-        result["pass"] = lines == ["nginx", "redis", "postgres"]
-        result["message"] = "Expected the three service names, one per line. Got: " + repr(lines)
+        stdout = buf.getvalue()
+        lines = [x.strip() for x in clean_lines(stdout)]
+        expected_lines = ["nginx", "redis", "postgres"]
+        result["stdout"] = stdout
+        result["actual"] = "\n".join(lines) if lines else "(no output)"
+        result["expected"] = "\n".join(expected_lines)
+        result["pass"] = lines == expected_lines
+        result["logic"] = "Executed your loop with services = ['nginx', 'redis', 'postgres']."
+        result["message"] = "Output matches." if result["pass"] else "Your code executed, but its output differs from the required output."
 
     elif TEST_ID == "evens":
         env["numbers"] = [1, 2, 3, 4, 5, 6]
-        exec(USER_CODE, env)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exec(USER_CODE, env)
         got = env.get("evens", None)
+        result["stdout"] = buf.getvalue()
+        result["actual"] = "evens = " + repr(got)
+        result["expected"] = "evens = [2, 4, 6]"
         result["pass"] = got == [2, 4, 6]
-        result["message"] = "Expected evens == [2, 4, 6]. Got: " + repr(got)
+        result["logic"] = "Executed your code with numbers = [1, 2, 3, 4, 5, 6] and inspected the resulting variable 'evens'."
+        result["message"] = "Result matches." if result["pass"] else "The resulting value of 'evens' does not match the required list."
 
     elif TEST_ID == "is_even":
         exec(USER_CODE, env)
         fn = env.get("is_even")
-        tests = [(2, True), (3, False), (0, True), (-4, True), (-5, False)]
-        ok = callable(fn) and all(fn(x) is expected for x, expected in tests)
+        tests = [(4, True), (5, False), (0, True), (-4, True), (-5, False)]
+        observed = []
+        ok = callable(fn)
+        if ok:
+            for x, expected in tests:
+                try:
+                    got = fn(x)
+                    observed.append((x, got, expected))
+                    if got is not expected:
+                        ok = False
+                except Exception as ex:
+                    observed.append((x, type(ex).__name__ + ": " + str(ex), expected))
+                    ok = False
+        else:
+            observed.append(("function", "is_even was not defined/callable", "callable function"))
+        result["actual"] = "\n".join(
+            f"is_even({x}) -> {got}" for x, got, _ in observed
+        )
+        result["expected"] = "\n".join(
+            f"is_even({x}) -> {expected}" for x, _, expected in observed
+        )
         result["pass"] = ok
-        result["message"] = "is_even() must return the correct Boolean for positive, zero, and negative integers."
+        result["logic"] = "Loaded your function and called it with several positive, zero, and negative integers."
+        result["message"] = "All return-value tests passed." if ok else "At least one return-value test failed."
 
     elif TEST_ID == "server_status":
         env["server_status"] = {"web1": "up", "web2": "down"}
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             exec(USER_CODE, env)
-        lines = [x.strip() for x in buf.getvalue().splitlines() if x.strip()]
-        result["pass"] = lines == ["web1: up", "web2: down"]
-        result["message"] = "Expected: web1: up and web2: down, each on its own line. Got: " + repr(lines)
+        stdout = buf.getvalue()
+        lines = [x.strip() for x in clean_lines(stdout)]
+        expected_lines = ["web1: up", "web2: down"]
+        result["stdout"] = stdout
+        result["actual"] = "\n".join(lines) if lines else "(no output)"
+        result["expected"] = "\n".join(expected_lines)
+        result["pass"] = lines == expected_lines
+        result["logic"] = "Executed your code with server_status = {'web1': 'up', 'web2': 'down'}."
+        result["message"] = "Output matches." if result["pass"] else "Your output does not match the required key/value lines."
 
     elif TEST_ID == "value_error":
-        env["user_input"] = "not-a-number"
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            exec(USER_CODE, env)
-        out = buf.getvalue().strip()
-        result["pass"] = "Invalid number" in out
-        result["message"] = "With user_input='not-a-number', the code must handle ValueError and print 'Invalid number'. Got: " + repr(out)
+        # Test BOTH invalid and valid input so code that simply always prints
+        # "Invalid number" does not pass.
+        cases = [("abc", "Invalid number"), ("42", "")]
+        observed = []
+        ok = True
+        for user_input_value, expected_output in cases:
+            case_env = {"user_input": user_input_value}
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    exec(USER_CODE, case_env)
+                actual_output = buf.getvalue().strip()
+            except Exception as ex:
+                actual_output = type(ex).__name__ + ": " + str(ex)
+            observed.append((user_input_value, actual_output, expected_output))
+            if actual_output != expected_output:
+                ok = False
+
+        result["actual"] = "\n".join(
+            f'user_input={inp!r} -> {out if out else "(no output)"}'
+            for inp, out, _ in observed
+        )
+        result["expected"] = "\n".join(
+            f'user_input={inp!r} -> {exp if exp else "(no output)"}'
+            for inp, _, exp in observed
+        )
+        result["pass"] = ok
+        result["logic"] = "Executed your try/except twice: once with invalid input and once with valid numeric input."
+        result["message"] = "Both error-handling cases passed." if ok else "Your exception-handling behavior differs in at least one test case."
+
     else:
-        result["message"] = "No executable test is configured for this Python question."
+        result["message"] = "No executable runtime test is configured for this Python question."
+        result["actual"] = "(runtime test unavailable)"
+        result["expected"] = "(no configured expected result)"
 except Exception as ex:
     result["pass"] = False
     result["message"] = type(ex).__name__ + ": " + str(ex)
+    result["actual"] = type(ex).__name__ + ": " + str(ex)
 json.dumps(result)
         \`);
         self.postMessage({id, ok:true, result:JSON.parse(resultJson)});
@@ -9977,7 +10127,14 @@ async function gradeAnswerByBehavior(q, raw, normalized){
   // MCQs are graded by their selected answer. vi questions are validated by final buffer state.
   if(q.type === 'python'){
     const result = await runPythonBehaviorTest(q, raw);
-    if(result.ok) return {pass: !!result.result.pass, detail: result.result.message, behavior:true};
+    if(result.ok) return {
+      pass: !!result.result.pass,
+      detail: result.result.message,
+      behavior:true,
+      actual: result.result.actual || '',
+      expected: result.result.expected || '',
+      logic: result.result.logic || ''
+    };
     // If Pyodide cannot load (offline, CDN blocked, mobile/WebView restriction),
     // use a semantic fallback that deliberately ignores arbitrary identifier names
     // and accepts multiple valid solution shapes.
@@ -10029,9 +10186,10 @@ async function submitAnswer(){
         youTypedHtml(raw, isCode) +
         '<div class="verdict pass">✔ PASS — ' + acceptedLabel + ' (attempt ' + (attempts+1) + ' of ' + MAX_ATTEMPTS + ')</div>' +
         (q.type === 'python' && grading.behavior
-          ? '<div class="feedback-line">✓ Your code was executed against hidden output/return-value tests. Variable names and implementation style do not have to match the notes.</div>'
+          ? '<div class="feedback-line">✓ Your code was actually executed. The grader checks the resulting output/state/return values, not whether your variable names or syntax match the notes.</div>' +
+            (grading.actual ? '<div class="runtime-block-title">Observed result</div><pre class="runtime-pre">' + escapeHtml(grading.actual) + '</pre>' : '')
           : (q.type === 'python' && grading.fallback
-            ? '<div class="feedback-line">✓ Python runtime was unavailable, so the semantic fallback grader was used. Arbitrary variable names and equivalent solution forms are accepted.</div>'
+            ? '<div class="feedback-line">✓ Runtime execution was unavailable, so a semantic logic fallback was used. This fallback ignores arbitrary variable names and accepts equivalent solution forms.</div>'
             : '')) +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
@@ -10062,7 +10220,6 @@ async function submitAnswer(){
     if(hintsShown < attempts){
       showHint();
     }
-    input.value = '';
     input.focus();
   }
 }
