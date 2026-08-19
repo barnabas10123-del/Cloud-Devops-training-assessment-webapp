@@ -415,7 +415,7 @@
 <div class="scanlines"></div>
 <div class="wrap">
 
-  <div class="boot" id="bootLine">booting ops-drill v2.5 — runtime output grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
+  <div class="boot" id="bootLine">booting ops-drill v2.6 — stable runtime grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
 
   <div class="header">
     <div class="brand">
@@ -9640,7 +9640,7 @@ function renderQuestion(){
             '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'cmdInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'cmdInput\')">⇤ Outdent</button></div>'
           : '<input type="text" id="cmdInput" class="cmd-input" placeholder="type the command…" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
         (q.type === 'python'
-          ? '<div class="runtime-output-wrap"><button type="button" class="hint-btn" id="previewPythonBtn" onclick="showMyPythonOutput()">▶ Run / show my output</button><div id="runtimeOutputPanel" class="runtime-output-panel"></div></div>'
+          ? '<div class="runtime-output-wrap"><button type="button" class="hint-btn" id="previewPythonBtn" onclick="showMyPythonOutput()">▶ Run / show my output</button><span class="bash-hint" style="margin-left:8px">First run may take a few seconds while Python loads.</span><div id="runtimeOutputPanel" class="runtime-output-panel"></div></div>'
           : (((q.type === 'bash' || isVi) && q.sampleOutput)
             ? '<div class="sample-output-wrap"><button type="button" class="hint-btn" onclick="toggleSampleOutput()">▸ View expected result</button><div id="sampleOutputPanel" class="sample-output-panel"><div class="sample-output-title">Expected result</div><pre id="sampleOutputPre" class="sample-output-pre"></pre></div></div>'
             : '')) +
@@ -9806,14 +9806,18 @@ async function showMyPythonOutput(){
     return;
   }
 
-  // If the Python runtime cannot load, do not pretend we executed the code.
-  // Show a clear runtime message instead of falling back to an "expected answer".
+  // Runtime unavailable: never invent execution output. But tell the user whether
+  // the local semantic checker recognizes the logic, and do not consume an attempt.
+  const semanticOk = pythonSemanticFallback(q, code);
   panel.innerHTML =
-    '<div class="runtime-match fail">Could not execute Python in this browser right now.</div>' +
-    '<div class="vi-hint" style="margin-top:7px">' +
+    '<div class="runtime-match ' + (semanticOk ? 'pass' : 'fail') + '">' +
+      (semanticOk
+        ? '✓ Logic check passes, but the browser Python runtime could not load, so actual Python output could not be executed here.'
+        : 'Could not execute Python in this browser, and the local logic checker does not yet verify this solution.') +
+    '</div>' +
+    '<div class="vi-hint" style="margin-top:7px">Runtime error: ' +
       escapeHtml((result && result.error) || 'Python runtime unavailable.') +
-      ' The Submit button can still use the semantic fallback, but this preview only labels something as output when the code was actually executed.' +
-    '</div>';
+      '<br>This preview will only show “Your code produced” when real Python execution succeeds.</div>';
 }
 
 
@@ -9875,10 +9879,8 @@ function youTypedHtml(raw, isCode){
 }
 
 /* ============================= BEHAVIOR-BASED PYTHON GRADING ============================= */
-let pythonWorker = null;
-let pythonWorkerReady = false;
-let pythonWorkerSeq = 0;
-const pythonPending = new Map();
+let pyodideRuntime = null;
+let pyodideLoadPromise = null;
 
 function pythonTestId(q){
   if(q.type !== 'python') return null;
@@ -9891,24 +9893,67 @@ function pythonTestId(q){
   return null;
 }
 
-function getPythonWorker(){
-  if(pythonWorker) return pythonWorker;
-  const workerSource = String.raw`
-    let pyodide = null;
-    async function ensurePyodide(){
-      if(pyodide) return pyodide;
-      importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js');
-      pyodide = await loadPyodide({indexURL:'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/'});
-      return pyodide;
+function loadExternalScript(url){
+  return new Promise((resolve,reject)=>{
+    const existing = [...document.scripts].find(s=>s.src===url);
+    if(existing){
+      if(window.loadPyodide) return resolve();
+      existing.addEventListener('load',()=>resolve(),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('Failed to load '+url)),{once:true});
+      return;
     }
-    self.onmessage = async (e) => {
-      const {id, code, testId} = e.data;
-      try {
-        const py = await ensurePyodide();
-        py.globals.set('USER_CODE', code);
-        py.globals.set('TEST_ID', testId);
-        const resultJson = await py.runPythonAsync(String.raw\`
-import io, contextlib, json, traceback
+    const s=document.createElement('script');
+    s.src=url;
+    s.async=true;
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error('Failed to load '+url));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensurePyodideRuntime(){
+  if(pyodideRuntime) return pyodideRuntime;
+  if(pyodideLoadPromise) return pyodideLoadPromise;
+
+  pyodideLoadPromise = (async ()=>{
+    const bases = [
+      'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/',
+      'https://unpkg.com/pyodide@0.27.7/'
+    ];
+    let lastErr = null;
+
+    for(const base of bases){
+      try{
+        if(!window.loadPyodide){
+          await loadExternalScript(base + 'pyodide.js');
+        }
+        if(typeof window.loadPyodide !== 'function') throw new Error('loadPyodide was not defined after loading the runtime script.');
+        pyodideRuntime = await window.loadPyodide({indexURL:base});
+        return pyodideRuntime;
+      }catch(err){
+        lastErr = err;
+        // If the first CDN partially loaded a broken global, remove it before retrying.
+        pyodideRuntime = null;
+      }
+    }
+    pyodideLoadPromise = null;
+    throw lastErr || new Error('Unable to load the Python runtime.');
+  })();
+
+  return pyodideLoadPromise;
+}
+
+async function runPythonBehaviorTest(q, code){
+  const testId = pythonTestId(q);
+  if(!testId) return {ok:false, noTest:true, error:'No executable test is configured for this Python question.'};
+
+  try{
+    const py = await ensurePyodideRuntime();
+    py.globals.set('USER_CODE', code);
+    py.globals.set('TEST_ID', testId);
+
+    const resultJson = await py.runPythonAsync(`
+import io, contextlib, json
 result = {
     "pass": False,
     "message": "The code ran, but its behavior did not meet the task.",
@@ -9932,10 +9977,10 @@ try:
         lines = [x.strip() for x in clean_lines(stdout)]
         expected_lines = ["nginx", "redis", "postgres"]
         result["stdout"] = stdout
-        result["actual"] = "\n".join(lines) if lines else "(no output)"
-        result["expected"] = "\n".join(expected_lines)
+        result["actual"] = "\\n".join(lines) if lines else "(no output)"
+        result["expected"] = "\\n".join(expected_lines)
         result["pass"] = lines == expected_lines
-        result["logic"] = "Executed your loop with services = ['nginx', 'redis', 'postgres']."
+        result["logic"] = "Executed your code with services = ['nginx', 'redis', 'postgres']."
         result["message"] = "Output matches." if result["pass"] else "Your code executed, but its output differs from the required output."
 
     elif TEST_ID == "evens":
@@ -9948,7 +9993,7 @@ try:
         result["actual"] = "evens = " + repr(got)
         result["expected"] = "evens = [2, 4, 6]"
         result["pass"] = got == [2, 4, 6]
-        result["logic"] = "Executed your code with numbers = [1, 2, 3, 4, 5, 6] and inspected the resulting variable 'evens'."
+        result["logic"] = "Executed your code and inspected the resulting variable 'evens'."
         result["message"] = "Result matches." if result["pass"] else "The resulting value of 'evens' does not match the required list."
 
     elif TEST_ID == "is_even":
@@ -9962,19 +10007,15 @@ try:
                 try:
                     got = fn(x)
                     observed.append((x, got, expected))
-                    if got is not expected:
+                    if got != expected:
                         ok = False
                 except Exception as ex:
                     observed.append((x, type(ex).__name__ + ": " + str(ex), expected))
                     ok = False
         else:
             observed.append(("function", "is_even was not defined/callable", "callable function"))
-        result["actual"] = "\n".join(
-            f"is_even({x}) -> {got}" for x, got, _ in observed
-        )
-        result["expected"] = "\n".join(
-            f"is_even({x}) -> {expected}" for x, _, expected in observed
-        )
+        result["actual"] = "\\n".join(f"is_even({x}) -> {got}" for x, got, _ in observed)
+        result["expected"] = "\\n".join(f"is_even({x}) -> {expected}" for x, _, expected in observed)
         result["pass"] = ok
         result["logic"] = "Loaded your function and called it with several positive, zero, and negative integers."
         result["message"] = "All return-value tests passed." if ok else "At least one return-value test failed."
@@ -9988,15 +10029,13 @@ try:
         lines = [x.strip() for x in clean_lines(stdout)]
         expected_lines = ["web1: up", "web2: down"]
         result["stdout"] = stdout
-        result["actual"] = "\n".join(lines) if lines else "(no output)"
-        result["expected"] = "\n".join(expected_lines)
+        result["actual"] = "\\n".join(lines) if lines else "(no output)"
+        result["expected"] = "\\n".join(expected_lines)
         result["pass"] = lines == expected_lines
         result["logic"] = "Executed your code with server_status = {'web1': 'up', 'web2': 'down'}."
         result["message"] = "Output matches." if result["pass"] else "Your output does not match the required key/value lines."
 
     elif TEST_ID == "value_error":
-        # Test BOTH invalid and valid input so code that simply always prints
-        # "Invalid number" does not pass.
         cases = [("abc", "Invalid number"), ("42", "")]
         observed = []
         ok = True
@@ -10012,17 +10051,16 @@ try:
             observed.append((user_input_value, actual_output, expected_output))
             if actual_output != expected_output:
                 ok = False
-
-        result["actual"] = "\n".join(
+        result["actual"] = "\\n".join(
             f'user_input={inp!r} -> {out if out else "(no output)"}'
             for inp, out, _ in observed
         )
-        result["expected"] = "\n".join(
+        result["expected"] = "\\n".join(
             f'user_input={inp!r} -> {exp if exp else "(no output)"}'
             for inp, _, exp in observed
         )
         result["pass"] = ok
-        result["logic"] = "Executed your try/except twice: once with invalid input and once with valid numeric input."
+        result["logic"] = "Executed your try/except with invalid and valid input."
         result["message"] = "Both error-handling cases passed." if ok else "Your exception-handling behavior differs in at least one test case."
 
     else:
@@ -10033,44 +10071,14 @@ except Exception as ex:
     result["pass"] = False
     result["message"] = type(ex).__name__ + ": " + str(ex)
     result["actual"] = type(ex).__name__ + ": " + str(ex)
-json.dumps(result)
-        \`);
-        self.postMessage({id, ok:true, result:JSON.parse(resultJson)});
-      } catch(err) {
-        self.postMessage({id, ok:false, error:String(err && err.message ? err.message : err)});
-      }
-    };
-  `;
-  const blob = new Blob([workerSource], {type:'application/javascript'});
-  pythonWorker = new Worker(URL.createObjectURL(blob));
-  pythonWorker.onmessage = (e) => {
-    const pending = pythonPending.get(e.data.id);
-    if(!pending) return;
-    pythonPending.delete(e.data.id);
-    pending.resolve(e.data);
-  };
-  pythonWorker.onerror = (e) => {
-    for(const [,pending] of pythonPending) pending.reject(e);
-    pythonPending.clear();
-    pythonWorker.terminate();
-    pythonWorker = null;
-  };
-  return pythonWorker;
-}
 
-function runPythonBehaviorTest(q, code){
-  const testId = pythonTestId(q);
-  if(!testId) return Promise.resolve({ok:false, noTest:true});
-  return new Promise((resolve, reject) => {
-    const id = ++pythonWorkerSeq;
-    pythonPending.set(id, {resolve, reject});
-    getPythonWorker().postMessage({id, code, testId});
-    setTimeout(() => {
-      if(!pythonPending.has(id)) return;
-      pythonPending.delete(id);
-      resolve({ok:false, timeout:true, error:'Python runner timed out'});
-    }, 30000);
-  });
+json.dumps(result)
+`);
+    return {ok:true, result:JSON.parse(resultJson)};
+  }catch(err){
+    const msg = err && err.message ? err.message : String(err);
+    return {ok:false, error:msg};
+  }
 }
 
 
@@ -10126,7 +10134,13 @@ function pythonSemanticFallback(q, raw){
 async function gradeAnswerByBehavior(q, raw, normalized){
   // MCQs are graded by their selected answer. vi questions are validated by final buffer state.
   if(q.type === 'python'){
-    const result = await runPythonBehaviorTest(q, raw);
+    let result;
+    try{
+      result = await runPythonBehaviorTest(q, raw);
+    }catch(err){
+      result = {ok:false, error:(err && err.message) ? err.message : String(err)};
+    }
+
     if(result.ok) return {
       pass: !!result.result.pass,
       detail: result.result.message,
@@ -10135,13 +10149,14 @@ async function gradeAnswerByBehavior(q, raw, normalized){
       expected: result.result.expected || '',
       logic: result.result.logic || ''
     };
-    // If Pyodide cannot load (offline, CDN blocked, mobile/WebView restriction),
-    // use a semantic fallback that deliberately ignores arbitrary identifier names
-    // and accepts multiple valid solution shapes.
+
+    // Runtime could not load: use semantic logic grading instead of marking correct code wrong.
     const fallbackPass = pythonSemanticFallback(q, raw);
     return {
       pass: fallbackPass,
-      detail: (result.error || 'Python runtime unavailable') + ' — semantic offline grader used instead.',
+      detail: fallbackPass
+        ? 'Python runtime could not load, but the submitted logic satisfies this challenge.'
+        : ((result.error || 'Python runtime unavailable') + ' — semantic fallback also could not verify the solution.'),
       behavior:false,
       fallback:true
     };
