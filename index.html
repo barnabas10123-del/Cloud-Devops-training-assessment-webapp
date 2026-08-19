@@ -9632,7 +9632,7 @@ function renderQuestion(){
     const codeNoun = q.type === 'python' ? 'code' : 'script';
     const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
     interactionHtml =
-      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is executed in the challenge's test environment; grading is based on output/state/return behavior, not matching the sample syntax. Use “Run / show my output” to test the code currently in the box without consuming an attempt. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
+      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is executed in the challenge\'s test environment; grading is based on output/state/return behavior, not matching the sample syntax. Use “Run / show my output” to test the code currently in the box without consuming an attempt. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
