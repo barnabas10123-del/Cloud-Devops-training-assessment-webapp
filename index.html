@@ -9369,7 +9369,7 @@ function renderSetup(){
       '</div>' +
       (setupState.scope === 'topic'
         ? '<div class="setup-grid" style="margin-top:8px;">' +
-            ALL_CATS.map(c => '<button class="setup-opt' + (setupState.topic===c ? ' sel' : '') + '" onclick="setSetupTopic(' + JSON.stringify(c) + ')"><div class="t">' + escapeHtml(c) + '</div></button>').join('') +
+            ALL_CATS.map((c,i) => '<button class="setup-opt' + (setupState.topic===c ? ' sel' : '') + '" onclick="setSetupTopicByIndex(' + i + ')"><div class="t">' + escapeHtml(c) + '</div></button>').join('') +
           '</div>'
         : '') +
     '</div>';
@@ -9429,6 +9429,13 @@ function setSetupScope(scope){
 function setSetupTopic(topic){
   setupState.topic = topic;
   renderSetup();
+}
+function setSetupTopicByIndex(index){
+  const topic = ALL_CATS[index];
+  if(typeof topic === 'string'){
+    setupState.topic = topic;
+    renderSetup();
+  }
 }
 function setSetupStyle(style){
   setupState.style = style;
