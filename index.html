@@ -9162,32 +9162,6 @@ function shuffleCopy(arr, salt=''){
   return out;
 }
 
-function tweakFact(fact, mode){
-  const swaps = [
-    [/\bmutable\b/i,'immutable'], [/\bimmutable\b/i,'mutable'],
-    [/\bascending\b/i,'descending'], [/\bdescending\b/i,'ascending'],
-    [/\bTrue\b/g,'False'], [/\bFalse\b/g,'True'],
-    [/\blist\b/i,'tuple'], [/\btuple\b/i,'list'],
-    [/\bdictionary\b/i,'set'], [/\bset\b/i,'dictionary'],
-    [/\binterpreted\b/i,'compiled-only'], [/\bcompiled\b/i,'interpreted-only'],
-    [/\bLocal\b/i,'Global'], [/\bGlobal\b/i,'Local'],
-    [/\b0\b/,'1'], [/\b1\b/,'0']
-  ];
-  let out = fact;
-  const start = (seededNumber(fact) + mode) % swaps.length;
-  for(let k=0;k<swaps.length;k++){
-    const [re,rep] = swaps[(start+k)%swaps.length];
-    if(re.test(out)){ out = out.replace(re,rep); if(out !== fact) return out; }
-  }
-  if(/\bis\b/i.test(out)) return out.replace(/\bis\b/i, mode%2 ? 'is never' : 'is not');
-  if(/\bare\b/i.test(out)) return out.replace(/\bare\b/i, mode%2 ? 'are never' : 'are not');
-  if(/\bcan\b/i.test(out)) return out.replace(/\bcan\b/i, 'cannot');
-  if(/\bcannot\b/i.test(out)) return out.replace(/\bcannot\b/i, 'can always');
-  const n = out.match(/\b(\d+)\b/);
-  if(n) return out.replace(n[0], String(Number(n[0])+1));
-  return 'The opposite is true: ' + out;
-}
-
 function classifyNoteLine(line, current){
   const l=line.toLowerCase();
   if(/python|\bdef\b|list comprehension|dictionary|tuple|frozenset|exception|valueerror|\blegb\b|print\(|\.append\(|\.extend\(|\.sort\(/.test(l)) return 'Python';
@@ -9214,79 +9188,185 @@ function makePythonCheck(expected){
   return raw => normalizePyScript(raw).replace(/\s+/g,' ').trim().toLowerCase()===target;
 }
 
+function isNoiseLine(line){
+  return !line || /^(copy|output:?|example:?|examples:?|syntax:?|time complexity:?|summary:?|key takeaways:?|interview questions:?|common interview questions:?|table of contents:?|difference:?|uses:?|common mistakes:?)$/i.test(line);
+}
+function cleanQuestionLabel(q){
+  return q.replace(/^Q\s*\d+\s*[.)-]?\s*/i,'').trim();
+}
+function nextUsefulLine(lines, from){
+  for(let i=from;i<lines.length;i++){
+    const x=lines[i];
+    if(!isNoiseLine(x)) return {line:x,index:i};
+  }
+  return null;
+}
+function shortTopicLabel(line){
+  let x=line.replace(/^\d+\.\s*/,'').trim();
+  if(x.length>70) return null;
+  if(/[.!?]$/.test(x) && !/\?$/.test(x)) return null;
+  return x;
+}
+function normalizedAnswerKey(s){ return normalize(String(s).replace(/[.`'\"]/g,'')); }
+
+function pickDistractors(correct, candidates, salt){
+  const ck=normalizedAnswerKey(correct);
+  const pool=[];
+  const used=new Set([ck]);
+  for(const c of shuffleCopy(candidates,salt)){
+    const text=String(c||'').trim();
+    const k=normalizedAnswerKey(text);
+    if(!text || text.length>180 || used.has(k)) continue;
+    // Avoid answers that are effectively the same phrase.
+    if(k.includes(ck) || ck.includes(k)) continue;
+    used.add(k); pool.push(text);
+    if(pool.length===3) break;
+  }
+  return pool.length===3 ? pool : [];
+}
+
+function makeMcq(cat, question, answer, answerPool, salt, explainLabel){
+  const distractors=pickDistractors(answer,answerPool,salt);
+  if(distractors.length<3) return null;
+  const opts=shuffleCopy([answer,...distractors],salt+'|opts');
+  const ids=['a','b','c','d'];
+  return {
+    cat,pts:10,type:'mcq',auto:true,
+    scenario:question,
+    options:opts.map((t,i)=>({id:ids[i],text:t})),
+    correctId:ids[opts.indexOf(answer)],
+    hints:['Recall the exact concept from your notes, then eliminate answers that belong to a different concept.','Focus on what the question is specifically asking: definition, purpose, syntax, behavior, or result.'],
+    sample:answer,
+    explain:'<b>'+escapeHtml(explainLabel || 'From your uploaded notes:')+'</b> '+escapeHtml(answer)
+  };
+}
+
 function buildAutoQuestions(text){
-  const raw = text.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').trim());
-  const cleaned = raw.map(x=>x.replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim());
+  const raw = text.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').replace(/\t+/g,' ').trimEnd());
+  const cleaned = raw.map(x=>x.trim().replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim());
   const generated=[];
   const seen=new Set();
   let currentCat='Notes Review';
 
-  // 1) Large factual MCQ pool: keep every useful unique fact instead of capping at 32.
-  for(const line of cleaned){
-    if(!line) continue;
-    if(/^python\b/i.test(line) && line.length < 90) currentCat='Python';
-    else if(/^(bash|shell|linux)\b/i.test(line) && line.length < 90) currentCat=/linux/i.test(line)?'Notes Review':'Bash Scripting';
-    if(line.length < 18 || line.length > 220) continue;
-    const cat=classifyNoteLine(line,currentCat);
-    const factLike=/\b(is|are|means|stands for|used to|returns?|cannot|can |supports?|stores?|prints?|shows?|defines?|allows?|requires?|equals?|difference|purpose|used when|used for)\b/i.test(line) || /\b[-]{1,2}[a-zA-Z]+\b/.test(line);
-    if(!factLike) continue;
-    const key='mcq|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
-    const distractors=[];
-    for(let mode=1; distractors.length<3 && mode<20; mode++){
-      let d=tweakFact(line,mode);
-      if(d!==line && !distractors.includes(d)) distractors.push(d);
-    }
-    while(distractors.length<3) distractors.push('Not this statement: '+line);
-    const opts=shuffleCopy([line,...distractors.slice(0,3)],'mcq|'+line);
-    const ids=['a','b','c','d'];
-    generated.push({cat,pts:10,type:'mcq',auto:true,scenario:'Which statement matches your latest notes?',options:opts.map((t,i)=>({id:ids[i],text:t})),correctId:ids[opts.indexOf(line)],hints:['Compare each option carefully with the concept as written in your notes.','Watch for a changed keyword, data type, direction, negation, or number.'],sample:line,explain:'<b>From your uploaded notes:</b> '+escapeHtml(line)});
+  // Build useful source-grounded Q/A candidates first. Distractors are borrowed
+  // from other real answers in the notes instead of fabricated negations.
+  const qa=[];
+
+  // A) Explicit interview/question lines followed by their answer.
+  for(let i=0;i<cleaned.length;i++){
+    const line=cleaned[i];
+    if(/^python\b/i.test(line) && line.length<90) currentCat='Python';
+    else if(/^(bash|shell)\b/i.test(line) && line.length<90) currentCat='Bash Scripting';
+    const isQ=/^(?:Q\s*\d+\s*[.)-]?\s*)?.+\?$/.test(line) || /^Q\s*\d+\b/i.test(line);
+    if(!isQ) continue;
+    const nxt=nextUsefulLine(cleaned,i+1); if(!nxt) continue;
+    const answer=nxt.line;
+    if(answer.length<1 || answer.length>180 || /\?$/.test(answer) || looksLikePythonCode(answer) || looksLikeShellCommand(answer)) continue;
+    const question=cleanQuestionLabel(line);
+    if(question.length<5 || question.length>180) continue;
+    qa.push({cat:classifyNoteLine(line,currentCat),question,answer,kind:'qa'});
   }
 
-  // 2) Turn command examples into terminal-style recall questions.
+  // B) Pipe-delimited tables such as "append() | Add one item at end".
+  for(const line of cleaned){
+    const m=line.match(/^(.{1,55}?)\s*\|\s*(.{2,140})$/);
+    if(!m) continue;
+    const left=m[1].trim(), right=m[2].trim();
+    if(/^(method|operator|command|option|syntax|name)$/i.test(left) || /^(purpose|meaning|description)$/i.test(right)) continue;
+    const cat=classifyNoteLine(line,currentCat);
+    const question = /\(\)$/.test(left) ? `What is the purpose of ${left}?` : `What does ${left} mean or do?`;
+    qa.push({cat,question,answer:right,kind:'table'});
+  }
+
+  // C) Short section/topic heading followed by a definition/description.
+  for(let i=0;i<cleaned.length-1;i++){
+    const topic=shortTopicLabel(cleaned[i]);
+    if(!topic || isNoiseLine(topic) || /\?$/.test(topic) || looksLikePythonCode(topic) || looksLikeShellCommand(topic)) continue;
+    const nxt=nextUsefulLine(cleaned,i+1); if(!nxt || nxt.index>i+2) continue;
+    const ans=nxt.line;
+    if(ans.length<12 || ans.length>180 || /\?$/.test(ans) || looksLikePythonCode(ans) || looksLikeShellCommand(ans)) continue;
+    // Restrict to headings that look like concepts/methods, not ordinary prose sentences.
+    const headingLike=/^(?:\d+\.\s*)?[A-Z][A-Za-z0-9 _+\-./()'`]{1,60}$/.test(cleaned[i]) || /\(\)$/.test(topic);
+    if(!headingLike) continue;
+    const cat=classifyNoteLine(topic,currentCat);
+    const q=/\(\)$/.test(topic) ? `What does ${topic} do?` : `Which description best matches “${topic}”?`;
+    qa.push({cat,question:q,answer:ans,kind:'definition'});
+  }
+
+  // D) Clean "X is/are ..." definitions become direct concept questions.
+  for(const line of cleaned){
+    if(line.length<20 || line.length>170) continue;
+    const m=line.match(/^([A-Za-z][A-Za-z0-9 _+\-./()]{1,55})\s+(is|are)\s+(.{5,120})[.]?$/i);
+    if(!m) continue;
+    const subject=m[1].trim(), verb=m[2].toLowerCase(), predicate=m[3].replace(/\.$/,'').trim();
+    if(/^(this|that|it|there|here|the first|the second)$/i.test(subject)) continue;
+    const cat=classifyNoteLine(line,currentCat);
+    qa.push({cat,question:`What ${verb==='is'?'is':'are'} true about ${subject}?`,answer:predicate,kind:'definition'});
+  }
+
+  // Deduplicate candidates and build category-aware answer banks.
+  const uniq=[];
+  for(const item of qa){
+    const key=normalize(item.question)+'|'+normalizedAnswerKey(item.answer);
+    if(seen.has('qa|'+key)) continue;
+    seen.add('qa|'+key); uniq.push(item);
+  }
+  const byCat={};
+  for(const item of uniq) (byCat[item.cat] ||= []).push(item.answer);
+  const allAnswers=uniq.map(x=>x.answer);
+
+  for(const item of uniq){
+    const pool=[...(byCat[item.cat]||[]),...allAnswers];
+    const q=makeMcq(item.cat,item.question,item.answer,pool,'knowledge|'+item.question,item.kind==='qa'?'Answer from your notes:':'Concept from your notes:');
+    if(q) generated.push(q);
+  }
+
+  // E) Turn command examples into terminal recall/application questions.
   for(const line of cleaned){
     if(!looksLikeShellCommand(line) || line.length>150) continue;
     const key='cmd|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    const commandName=(line.match(/^(?:sudo\s+)?([^\s]+)/)||[])[1] || 'command';
     generated.push({cat:'Bash Scripting',pts:15,type:'command',auto:true,
-      scenario:'Your latest notes include this shell command/example. Reproduce it at the terminal (equivalent spacing is accepted):\n\n'+line,
-      hints:['Recall the command/example from the notes.','Focus on the command name, flags, arguments, and redirection/pipes.'],sample:line,check:makeExactCheck(line),
-      explain:'<b>Notes-derived command practice:</b> '+escapeHtml(line)});
+      scenario:`Practice the ${commandName} example from your latest notes. Enter the complete command as it appears in your notes.`,
+      hints:['Identify the command, then recall its flags, arguments, pipes, or redirection.','The target is a real command example from your notes, not an invented variation.'],sample:line,check:makeExactCheck(line),
+      explain:'<b>Notes-derived command:</b> '+escapeHtml(line)});
   }
 
-  // 3) Turn short Python examples into hands-on code recall challenges.
+  // F) Turn short Python examples into hands-on code challenges.
   for(let i=0;i<cleaned.length;i++){
     const first=cleaned[i];
     if(!looksLikePythonCode(first)) continue;
     const block=[first];
-    for(let j=i+1;j<Math.min(cleaned.length,i+5);j++){
+    for(let j=i+1;j<Math.min(cleaned.length,i+7);j++){
       const ln=cleaned[j];
       if(!ln || /^(Output|Example|Syntax|Copy|Explanation|Time Complexity|Interview Questions|Summary)\b/i.test(ln)) break;
       if(looksLikePythonCode(ln) || /^\s+/.test(raw[j]) || /^(else:|elif\b|return\b|print\()/.test(ln)) block.push(ln); else break;
     }
     const code=block.join('\n');
-    if(code.length<8 || code.length>360) continue;
+    if(code.length<8 || code.length>420) continue;
     const key='py|'+code.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
     generated.push({cat:'Python',pts:20,type:'python',auto:true,
-      scenario:'Recreate this Python example from your latest notes in the code editor:\n\n'+code,
-      hints:['Recreate the logic shown in the notes; harmless spacing differences are accepted.','Keep the same statements, names, and values as the note example.'],sample:code,check:makePythonCheck(code),
-      explain:'<b>Notes-derived Python practice.</b> The target is the example saved in your latest notes.'});
+      scenario:'Write the Python example/logic from your latest notes in the code editor. Your answer is checked against the saved example, with harmless spacing differences ignored.',
+      hints:['Rebuild the logic one statement at a time.','Keep the same names, values, control flow, and function calls used in the note example.'],sample:code,check:makePythonCheck(code),
+      explain:'<b>Notes-derived Python practice.</b> This challenge comes from an actual code example in your uploaded notes.'});
   }
 
-  // 4) Turn obvious shell-control/script lines into Bash editor challenges.
+  // G) Turn obvious shell-control/script blocks into Bash editor challenges.
   for(let i=0;i<cleaned.length;i++){
     const line=cleaned[i];
     if(!line || !(/^(if\s|for\s|while\s|case\s|function\s|\w+\(\)\s*\{|#!\/bin\/)/.test(line))) continue;
     const block=[line];
-    for(let j=i+1;j<Math.min(cleaned.length,i+8);j++){
+    for(let j=i+1;j<Math.min(cleaned.length,i+10);j++){
       const ln=cleaned[j]; if(!ln) break;
       block.push(ln);
       if(/^(fi|done|esac|})$/.test(ln)) break;
     }
-    const script=block.join('\n'); if(script.length>500) continue;
+    const script=block.join('\n'); if(script.length>560) continue;
     const key='bash|'+script.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
     generated.push({cat:'Bash Scripting',pts:20,type:'bash',auto:true,
-      scenario:'Recreate this Bash/script example from your latest notes:\n\n'+script,
-      hints:['Recreate the script structure from the notes.','Keep the same commands, tests, variables, and control-flow keywords.'],sample:script,check:makeScriptCheck(script),
-      explain:'<b>Notes-derived Bash practice.</b> The target is the script/example saved in your latest notes.'});
+      scenario:'Recreate the Bash control-flow/script example from your latest notes in the editor.',
+      hints:['Start with the control-flow structure, then add the commands inside it.','Keep the same variables, tests, commands, and closing keyword used in your notes.'],sample:script,check:makeScriptCheck(script),
+      explain:'<b>Notes-derived Bash practice.</b> This target is taken from an actual script/example in your uploaded notes.'});
   }
 
   return shuffleCopy(generated,'pool-build');
