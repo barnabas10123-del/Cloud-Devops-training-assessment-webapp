@@ -9298,7 +9298,11 @@ function refreshQuestionBank(text, regenerate=true){
   QUESTIONS.splice(0,QUESTIONS.length,...BASE_QUESTIONS,...generated);
   autoQuestionCount=generated.length;
   ALL_CATS=[...new Set(QUESTIONS.map(q=>q.cat))];
-  if(setupState && setupState.scope==='topic' && !ALL_CATS.includes(setupState.topic)) setupState.topic=ALL_CATS[0];
+  if(setupState && setupState.scope==='topic') {
+    const selected = Array.isArray(setupState.topics) ? setupState.topics : (setupState.topic ? [setupState.topic] : []);
+    setupState.topics = selected.filter(t => ALL_CATS.includes(t));
+    delete setupState.topic;
+  }
 }
 
 /* ============================= STATE ============================= */
@@ -9314,7 +9318,7 @@ const MAX_ATTEMPTS = 3;
 let totalPossible = 0;
 let catScores = {};
 let ALL_CATS = [...new Set(QUESTIONS.map(q => q.cat))];
-let setupState = { scope: 'full', topic: null, style: 'mix', count: 32 };
+let setupState = { scope: 'full', topics: [], style: 'mix', count: 32 };
 
 const termBody = document.getElementById('termBody');
 const statQNum = document.getElementById('statQNum');
@@ -9342,7 +9346,10 @@ function pipsHtml(){
 function filteredIndices(state){
   return QUESTIONS.map((q,i)=>i).filter(i=>{
     const q = QUESTIONS[i];
-    if(state.scope === 'topic' && state.topic && q.cat !== state.topic) return false;
+    if(state.scope === 'topic') {
+      const selectedTopics = Array.isArray(state.topics) ? state.topics : [];
+      if(selectedTopics.length === 0 || !selectedTopics.includes(q.cat)) return false;
+    }
     if(state.style === 'code' && q.type === 'mcq') return false;
     if(state.style === 'mcq' && q.type !== 'mcq') return false;
     return true;
@@ -9368,8 +9375,15 @@ function renderSetup(){
         '</button>' +
       '</div>' +
       (setupState.scope === 'topic'
-        ? '<div class="setup-grid" style="margin-top:8px;">' +
-            ALL_CATS.map((c,i) => '<button class="setup-opt' + (setupState.topic===c ? ' sel' : '') + '" onclick="setSetupTopicByIndex(' + i + ')"><div class="t">' + escapeHtml(c) + '</div></button>').join('') +
+        ? '<div style="margin-top:8px;">' +
+            '<div class="setup-sub" style="margin-bottom:8px;">Select one or more topics. Tap a selected topic again to remove it.</div>' +
+            '<div class="notes-actions" style="margin:0 0 8px;">' +
+              '<button class="reset-btn" onclick="selectAllTopics()">Select all</button>' +
+              '<button class="reset-btn" onclick="clearTopics()">Clear</button>' +
+            '</div>' +
+            '<div class="setup-grid">' +
+              ALL_CATS.map((c,i) => '<button class="setup-opt' + ((setupState.topics || []).includes(c) ? ' sel' : '') + '" onclick="setSetupTopicByIndex(' + i + ')"><div class="t">' + (((setupState.topics || []).includes(c)) ? '✓ ' : '') + escapeHtml(c) + '</div></button>').join('') +
+            '</div>' +
           '</div>'
         : '') +
     '</div>';
@@ -9408,7 +9422,7 @@ function renderSetup(){
       styleHtml +
       lengthHtml +
       '<div class="setup-start-row">' +
-        '<span class="setup-count">' + quizCount + ' selected from ' + poolCount + ' available · about ' + pts + ' pts</span>' +
+        '<span class="setup-count">' + (setupState.scope==='topic' && (!setupState.topics || setupState.topics.length===0) ? 'Select at least one topic to continue' : (quizCount + ' selected from ' + poolCount + ' available · about ' + pts + ' pts')) + '</span>' +
         '<button class="setup-start-btn" ' + (poolCount===0 ? 'disabled' : '') + ' onclick="startChallenge()">Start ▸</button>' +
       '</div>' +
     '</div>';
@@ -9422,20 +9436,25 @@ function renderSetup(){
 
 function setSetupScope(scope){
   setupState.scope = scope;
-  if(scope === 'full'){ setupState.topic = null; }
-  else if(!setupState.topic){ setupState.topic = ALL_CATS[0]; }
-  renderSetup();
-}
-function setSetupTopic(topic){
-  setupState.topic = topic;
+  if(!Array.isArray(setupState.topics)) setupState.topics = [];
   renderSetup();
 }
 function setSetupTopicByIndex(index){
   const topic = ALL_CATS[index];
-  if(typeof topic === 'string'){
-    setupState.topic = topic;
-    renderSetup();
-  }
+  if(typeof topic !== 'string') return;
+  if(!Array.isArray(setupState.topics)) setupState.topics = [];
+  const pos = setupState.topics.indexOf(topic);
+  if(pos >= 0) setupState.topics.splice(pos,1);
+  else setupState.topics.push(topic);
+  renderSetup();
+}
+function selectAllTopics(){
+  setupState.topics = ALL_CATS.slice();
+  renderSetup();
+}
+function clearTopics(){
+  setupState.topics = [];
+  renderSetup();
 }
 function setSetupStyle(style){
   setupState.style = style;
