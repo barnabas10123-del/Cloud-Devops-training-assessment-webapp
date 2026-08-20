@@ -253,14 +253,6 @@
   .vi-key-esc{border-color:rgba(255,92,92,0.5); color:#ff9a9a;}
   .vi-key-colon{border-color:var(--teal); color:var(--teal);}
   .vi-giveup{text-align:right;}
-  .vi-save-shortcuts{margin:8px 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.12);}
-  .vi-save-title{font-family:var(--sans-c);font-size:11px;color:var(--teal);font-weight:600;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;}
-  .vi-save-row{display:flex;flex-wrap:wrap;gap:6px;}
-  .vi-save-help{font-family:var(--sans-c);font-size:10.8px;color:var(--text-dim);line-height:1.5;margin-top:7px;}
-  .vi-save-help code{font-family:var(--mono);color:var(--amber);}
-  .vi-save-key{font-family:var(--mono);font-size:11px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:7px 10px;cursor:pointer;}
-  .vi-save-key:hover{border-color:var(--amber-dim);color:var(--amber);}
-  .vi-save-key.primary{border-color:var(--teal);color:var(--teal);}
   .vi-final{color:var(--text); background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:10px 12px; white-space:pre-wrap; font-family:var(--mono); font-size:12.5px; margin-bottom:8px;}
 
   /* ---- MCQ ---- */
@@ -311,111 +303,13 @@
     padding:8px 14px; cursor:pointer; white-space:nowrap;
   }
   .upload-status{font-family:var(--sans-c); font-size:11.5px; color:var(--text-dim);}
-
-
-  /* ---- mobile / touch improvements ---- */
-  button, input, textarea { -webkit-tap-highlight-color: rgba(255,176,0,0.18); }
-  button { touch-action: manipulation; }
-  .terminal, .notes-panel { max-width:100%; }
-  .term-body, .scenario-text, .explain, .hint-item, .sample, .youtyped { overflow-wrap:anywhere; word-break:break-word; }
-  .cmd-input, .bash-input, .vi-line-input, textarea#notesArea { font-size:16px; } /* prevents iOS zoom-on-focus */
-
-  @media(max-width:700px){
-    body{padding:14px 8px 36px;}
-    .wrap{max-width:100%;}
-    .boot{font-size:10.5px; margin-bottom:10px;}
-    .header{align-items:stretch; margin-bottom:14px;}
-    .brand{width:100%; flex-wrap:wrap; gap:7px;}
-    .brand h1{font-size:16px;}
-    .brand .sub{width:100%; padding-left:16px; font-size:11.5px;}
-    .tabs{width:100%; display:grid; grid-template-columns:1fr 1fr;}
-    .tab-btn{min-height:44px; font-size:14px;}
-
-    .statusbar{grid-template-columns:1fr 1fr; margin-bottom:14px;}
-    .stat{padding:8px 10px;}
-    .stat .v{font-size:16px;}
-    .progress-track{margin-bottom:14px;}
-
-    .terminal{border-radius:8px;}
-    .term-bar{padding:8px 10px;}
-    .term-bar .title{font-size:10.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .term-body{padding:14px 12px 16px; min-height:0; font-size:13px; line-height:1.55;}
-
-    .setup-screen h2{font-size:17px;}
-    .setup-sub{font-size:12px; margin-bottom:16px;}
-    .setup-block{margin-bottom:18px;}
-    .setup-grid{grid-template-columns:1fr; gap:9px;}
-    .setup-opt{width:100%; min-height:48px; padding:12px 13px; font-size:14px;}
-    .setup-opt .d{font-size:12px; line-height:1.4; margin-top:3px;}
-    .setup-start-row{align-items:stretch; flex-direction:column;}
-    .setup-count{font-size:12px; line-height:1.4;}
-    .setup-start-btn{width:100%; min-height:48px; font-size:15px;}
-
-    .top-row{align-items:flex-start;}
-    .scenario-tag{font-size:10px;}
-    .scenario-text{font-size:13.5px;}
-    .prompt-line{align-items:stretch; flex-direction:column; gap:7px;}
-    .prompt{white-space:normal; overflow-wrap:anywhere;}
-    .cmd-input{width:100%; min-width:0; min-height:44px; padding:9px 10px; border:1px solid var(--line); border-radius:6px; background:var(--panel-2);}
-    .btn-group{display:grid; grid-template-columns:1fr 1fr; width:100%;}
-    .go-btn,.giveup-btn,.next-btn,.hint-btn{min-height:44px;}
-    .go-btn,.giveup-btn{width:100%;}
-    .next-row{justify-content:stretch;}
-    .next-btn{width:100%;}
-
-    .bash-input{min-height:170px; width:100%;}
-    .vi-editor{padding:9px;}
-    .vi-line{padding:5px 7px;}
-    .vi-keys{display:grid; grid-template-columns:repeat(2,minmax(0,1fr));}
-    .vi-key{min-height:44px; padding:8px;}
-    .mcq-opt{min-height:48px; padding:12px; font-size:14px;}
-
-    .notes-panel{padding:14px 12px;}
-    .upload-row{align-items:stretch; flex-direction:column;}
-    .upload-btn,.save-btn,.reset-btn{width:100%; min-height:46px; font-size:14px;}
-    .upload-status{line-height:1.45;}
-    textarea#notesArea{min-height:55vh;}
-    .notes-actions{display:grid; grid-template-columns:1fr;}
-    footer.foot{font-size:10.5px; line-height:1.5; padding:0 3px;}
-  }
-
-  @media(max-width:380px){
-    .statusbar{grid-template-columns:1fr 1fr;}
-    .stat .k{font-size:9.5px;}
-    .stat .v{font-size:15px;}
-    .btn-group{grid-template-columns:1fr;}
-  }
-
-  /* ---- editor indentation + sample-output helpers ---- */
-  .editor-tools{display:flex;gap:7px;flex-wrap:wrap;margin:6px 0 8px;}
-  .editor-tool-btn{font-family:var(--sans-c);font-size:11.5px;font-weight:600;background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);border-radius:5px;padding:6px 10px;cursor:pointer;}
-  .editor-tool-btn:hover{border-color:var(--amber-dim);color:var(--amber);}
-  .sample-output-wrap{margin:8px 0 10px;}
-  .sample-output-panel{display:none;margin-top:7px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:9px 11px;}
-  .sample-output-panel.show{display:block;}
-  .sample-output-title{font-family:var(--sans-c);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);margin-bottom:6px;}
-  .sample-output-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);}
-  .indent-note{font-family:var(--sans-c);font-size:10.8px;color:var(--text-dim);margin-top:4px;}
-  @media(max-width:560px){.editor-tool-btn{min-height:38px;padding:8px 12px}.sample-output-pre{font-size:12px}}
-
-  .runtime-output-wrap{margin:8px 0 10px;}
-  .runtime-output-panel{display:none;margin-top:7px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:10px 11px;}
-  .runtime-output-panel.show{display:block;}
-  .runtime-block-title{font-family:var(--sans-c);font-size:10.8px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);margin:8px 0 5px;}
-  .runtime-block-title:first-child{margin-top:0;}
-  .runtime-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);background:rgba(255,255,255,.018);border:1px solid var(--line);border-radius:5px;padding:8px 9px;}
-  .runtime-match{margin-top:8px;font-family:var(--sans-c);font-size:12px;font-weight:600;}
-  .runtime-match.pass{color:var(--green);}
-  .runtime-match.fail{color:var(--red);}
-  .runtime-match.neutral{color:var(--text-dim);}
-
 </style>
 </head>
 <body>
 <div class="scanlines"></div>
 <div class="wrap">
 
-  <div class="boot" id="bootLine">booting ops-drill v2.6 — stable runtime grader ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
+  <div class="boot" id="bootLine">booting ops-drill v2.0 ... loading /var/notes/linux_devops.md ... flexible-match engine online ... ready.</div>
 
   <div class="header">
     <div class="brand">
@@ -459,7 +353,7 @@
       <div class="upload-row">
         <input type="file" id="docxUpload" accept=".docx" style="display:none" onchange="handleDocxUpload(event)">
         <button class="upload-btn" onclick="document.getElementById('docxUpload').click()">⭱ Upload today's Linux notes.docx</button>
-        <span class="upload-status" id="uploadStatus">Upload the updated DOCX whenever you study. The page parses it locally, saves it in this browser, and automatically rebuilds extra notes-derived MCQs.</span>
+        <span class="upload-status" id="uploadStatus">Upload the updated DOCX whenever you study. The page parses it locally, saves it in this browser, and automatically rebuilds a large mixed notes-derived question pool.</span>
       </div>
       <textarea id="notesArea" spellcheck="false"></textarea>
       <div class="notes-actions">
@@ -467,7 +361,7 @@
         <button class="reset-btn" onclick="resetNotes()">Reset to original</button>
         <span class="save-msg" id="saveMsg">✓ saved</span>
       </div>
-      <div class="notes-note">Your uploaded notes are stored in this browser using localStorage, so they reload on the same browser/device. Each upload also rescans the document for technologies and section headings, regenerates notes-derived MCQs, and rebuilds the Topic-specific list automatically. New sections such as Docker, Jenkins, Terraform, AWS, Kubernetes, or other clear headings can therefore become selectable topics without editing this HTML. The curated command/Bash/Python coding questions remain in the bank as well.</div>
+      <div class="notes-note">Your uploaded notes are stored in this browser using localStorage, so they reload on the same browser/device. Each upload rebuilds a larger notes-derived pool containing MCQs plus command, Bash, and Python practice where the notes contain suitable examples. Every time you reopen this file, the saved notes are used to rebuild and reshuffle that pool again. Your chosen quiz length (10/20/32/50/all) is then randomly selected from the matching pool. Curated command/Bash/Python questions remain in the bank as well.</div>
     </div>
   </div>
 
@@ -843,7 +737,6 @@ const QUESTIONS = [
    scenario:"The on-call runbook has a running log at notes.txt with two lines already in it. Open it in vi and append a new line at the very end reading exactly: Deployed v2.3 to prod — then save and quit.",
    hints:["Open the file the normal way first.", "Once inside: G jumps to the last line, then o opens a new line below it and drops you into insert mode. Type the line, Esc, then :wq.", "Try: vi notes.txt, then G, then o, type Deployed v2.3 to prod, Esc, :wq"],
    sample:"vi notes.txt → G → o → Deployed v2.3 to prod → Esc → :wq",
-   sampleOutput:"First deployment done.\nRollback tested.\nDeployed v2.3 to prod",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase());
@@ -860,7 +753,6 @@ const QUESTIONS = [
    scenario:"notes.txt has a typo on line 2 — it reads 'Rollbak tested.' but should read 'Rollback tested.' Fix that line in vi, then save and quit.",
    hints:["Move the cursor to line 2 first — click the line, or use j/k.", "i (or a) lets you rewrite the line's text in this simulator — fix the spelling and confirm.", "Try: vi notes.txt, move to line 2, i, correct the spelling, Enter to confirm, :wq"],
    sample:"vi notes.txt → move to line 2 → i → correct the spelling → :wq",
-   sampleOutput:"First deployment done.\nRollback tested.\nNext release: Friday.",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase());
@@ -874,7 +766,6 @@ const QUESTIONS = [
    scenario:"A stray debug line snuck into notes.txt — line 2 reads 'DEBUG: remove before merge'. Delete that whole line in vi, then save and quit.",
    hints:["Move the cursor to the offending line first.", "dd deletes the entire current line in one shot.", "Try: vi notes.txt, move to line 2, dd, :wq"],
    sample:"vi notes.txt → move to line 2 → dd → :wq",
-   sampleOutput:"First deployment done.\nRollback tested.",
    check: viOpenCheck("notes.txt"),
    viCheck: buf => {
      const norm = buf.map(l=>l.trim().toLowerCase()).filter(l=>l.length>0);
@@ -886,15 +777,13 @@ const QUESTIONS = [
    scenario:"Write a short bash for-loop that iterates over every .log file in the current directory and echoes each filename.",
    hints:["Shape: for VAR in PATTERN; do ... ; done.", "The pattern is *.log, and each iteration you echo the loop variable.", "Try: for f in *.log; do echo $f; done"],
    sample:"for f in *.log; do echo $f; done",
-   sampleOutput:"app.log\nerror.log\naccess.log\n(example: one matching .log filename per line)",
-   check: s => /^for\s+(\w+)\s+in\s+\*\.log\s*;?\s*do\s*;?\s*(?:echo\s+"?\$\{?\1\}?"?|printf\s+['\"]%s(?:\\n)?['\"]\s+"?\$\{?\1\}?"?)\s*;?\s*done$/.test(s),
+   check: s => /^for\s+\w+\s+in\s+\*\.log\s*;?\s*do\s*;?\s*echo\s+"?\$\{?\w+\}?"?\s*;?\s*done$/.test(s),
    explain:"<b>for f in *.log; do echo $f; done</b> — the shell expands *.log into a word list first (filenames, not a live pattern match), then the loop walks it one filename at a time. Same logic works split across multiple lines with do/done on their own lines."},
 
   {cat:"Editing & Scripting", pts:25, type:"bash",
    scenario:"Write an if/else block that checks whether the variable $STATUS equals 'success' — echo OK if it does, FAILED otherwise.",
    hints:["Test syntax: if [ \"$VAR\" = \"value\" ]; then ... else ... fi — [[ ]] with == also works.", "Compare $STATUS to the string success, then echo OK or FAILED in the matching branch.", "Try: if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi"],
    sample:"if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi",
-   sampleOutput:"STATUS=success  →  OK\nSTATUS=failed   →  FAILED",
    check: s => /^if\s*\[{1,2}\s*"?\$\{?status\}?"?\s*==?\s*"?success"?\s*\]{1,2}\s*;?\s*then\s*;?\s*echo\s+"?ok"?\s*;?\s*else\s*;?\s*echo\s+"?failed"?\s*;?\s*fi$/.test(s),
    explain:"<b>if [ \"$STATUS\" = \"success\" ]; then echo OK; else echo FAILED; fi</b> — single brackets use = for string comparison (POSIX test); double brackets [[ ]] also allow ==. Quoting $STATUS protects against word-splitting if it's ever empty or has spaces."},
 
@@ -1045,7 +934,7 @@ const QUESTIONS = [
    scenario:"Write a for loop using \"$@\" that echoes each positional argument passed to the script, one per line.",
    hints:["Loop shape: for VAR in \"$@\"; do ... ; done", "Quote $@ so multi-word arguments stay intact as single items.", "Try: for arg in \"$@\"; do echo \"$arg\"; done"],
    sample:"for arg in \"$@\"; do echo \"$arg\"; done",
-   check: s => /^for\s+(\w+)\s+in\s+"\$@"\s*;?\s*do\s*;?\s*(?:echo\s+"?\$\{?\1\}?"?|printf\s+['\"]%s(?:\\n)?['\"]\s+"?\$\{?\1\}?"?)\s*;?\s*done$/.test(s),
+   check: s => /^for\s+\w+\s+in\s+"?\$@"?\s*;?\s*do\s*;?\s*echo\s+"?\$\{?\w+\}?"?\s*;?\s*done$/.test(s),
    explain:"<b>for arg in \"$@\"; do echo \"$arg\"; done</b> — quoting \"$@\" keeps each argument as its own word even if it contains spaces, which is why it's preferred over $* for looping over arguments."},
 
   /* ---------------------------- Python Fundamentals (MCQ) ---------------------------- */
@@ -1103,27 +992,24 @@ const QUESTIONS = [
    explain:"Python is fully case-sensitive — myVar, MyVar, and myvar are three distinct identifiers, and keywords/built-ins must match their defined case exactly (True, not true; print, not Print)."},
 
   /* ---------------------------- Python coding ---------------------------- */
-  {cat:"Python", pts:15, type:"python", testId:"services_loop",
+  {cat:"Python", pts:15, type:"python",
    scenario:"You have a list: services = [\"nginx\", \"redis\", \"postgres\"]. Write a for loop that prints each service name.",
    hints:["Shape: for VAR in services: print(VAR)", "Python uses a colon to start the loop body, not 'do'/'done' like bash.", "Try: for s in services: print(s)"],
    sample:"for s in services:\n    print(s)",
-   sampleOutput:"nginx\nredis\npostgres",
    check: s => /^for\s+\w+\s+in\s+services\s*:\s*print\s*\(\s*\w+\s*\)$/i.test(s),
    explain:"<b>for s in services: print(s)</b> — Python's for loop iterates directly over the list's items (not indices), which is the idiomatic way to walk a collection."},
 
-  {cat:"Python", pts:20, type:"python", testId:"evens",
+  {cat:"Python", pts:20, type:"python",
    scenario:"Given numbers = [1, 2, 3, 4, 5, 6], write a one-line list comprehension that builds a new list, evens, containing only the even numbers.",
    hints:["Shape: [EXPR for VAR in ITERABLE if CONDITION]", "'Even' means n % 2 == 0.", "Try: evens = [n for n in numbers if n % 2 == 0]"],
    sample:"evens = [n for n in numbers if n % 2 == 0]",
-   sampleOutput:"evens == [2, 4, 6]",
    check: s => /^\w+\s*=\s*\[\s*\w+\s+for\s+\w+\s+in\s+numbers\s+if\s+\w+\s*%\s*2\s*==\s*0\s*\]$/i.test(s),
    explain:"<b>evens = [n for n in numbers if n % 2 == 0]</b> — a list comprehension filters and transforms in one line: for each n in numbers, keep it only if n % 2 == 0."},
 
-  {cat:"Python", pts:20, type:"python", testId:"is_even",
+  {cat:"Python", pts:20, type:"python",
    scenario:"Write a function called is_even that takes one parameter n and returns True if n is even, False otherwise.",
    hints:["def is_even(n): ... — the return value can be the boolean expression itself.", "n % 2 == 0 is already True or False — you can return that directly instead of writing an if/else.", "Try: def is_even(n):\\n    return n % 2 == 0"],
    sample:"def is_even(n):\n    return n % 2 == 0",
-   sampleOutput:"is_even(4)  →  True\nis_even(5)  →  False",
    check: s => {
      if(!/def\s+is_even\s*\(\s*\w+\s*\)\s*:/i.test(s)) return false;
      if(/return\s+\w+\s*%\s*2\s*==\s*0/i.test(s)) return true;
@@ -1132,19 +1018,17 @@ const QUESTIONS = [
    },
    explain:"<b>def is_even(n): return n % 2 == 0</b> — the comparison n % 2 == 0 already evaluates to True or False, so returning it directly is cleaner than an if/else that just returns True or False in each branch."},
 
-  {cat:"Python", pts:20, type:"python", testId:"server_status",
+  {cat:"Python", pts:20, type:"python",
    scenario:"Given server_status = {\"web1\": \"up\", \"web2\": \"down\"}, write a for loop that prints each key and value on its own line, like 'web1: up'.",
    hints:["Dictionaries have a .items() method that gives you (key, value) pairs to unpack.", "Shape: for k, v in server_status.items(): print(...)", "Try: for k, v in server_status.items(): print(f\"{k}: {v}\")"],
    sample:"for k, v in server_status.items():\n    print(f\"{k}: {v}\")",
-   sampleOutput:"web1: up\nweb2: down",
    check: s => /for\s+\w+\s*,\s*\w+\s+in\s+server_status\.items\s*\(\s*\)\s*:/i.test(s) && /print\s*\(/i.test(s),
    explain:"<b>for k, v in server_status.items(): print(f\"{k}: {v}\")</b> — .items() gives you (key, value) tuples, which you can unpack directly into two loop variables."},
 
-  {cat:"Python", pts:25, type:"python", testId:"value_error",
+  {cat:"Python", pts:25, type:"python",
    scenario:"Write a try/except block that attempts int(user_input), and prints 'Invalid number' if it raises a ValueError.",
    hints:["Shape: try: ... except ExceptionType: ...", "Converting a non-numeric string with int() raises specifically a ValueError.", "Try: try:\\n    int(user_input)\\nexcept ValueError:\\n    print(\"Invalid number\")"],
    sample:"try:\n    int(user_input)\nexcept ValueError:\n    print(\"Invalid number\")",
-   sampleOutput:"user_input = \"abc\"  →  Invalid number\nuser_input = \"42\"   →  (no error message)",
    check: s => /try\s*:/i.test(s) && /except\s+valueerror/i.test(s) && /int\s*\(\s*user_input\s*\)/i.test(s) && /print\s*\(/i.test(s),
    explain:"<b>try: int(user_input) except ValueError: print(\"Invalid number\")</b> — int() raises ValueError specifically when the string can't be parsed as a number, so catching that (rather than a bare except:) targets the actual failure mode without silently swallowing unrelated bugs."},
 ];
@@ -9257,14 +9141,25 @@ Never quote the right-hand side of =~; put complex regexes in a variable.
 -eq arithmetic-evaluates its operands — validate input with a regex before trusting it.
 Every file test except -L/-h follows symlinks.`;
 
-/* ============================= DYNAMIC NOTES-DERIVED MCQs ============================= */
+/* ============================= DYNAMIC NOTES-DERIVED QUESTION POOL ============================= */
 const BASE_QUESTIONS = QUESTIONS.slice();
 let autoQuestionCount = 0;
+let sessionGenerationSeed = Date.now() ^ Math.floor(Math.random()*0x7fffffff);
 
 function hashText(str){
   let h = 2166136261;
   for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
+}
+function seededNumber(str){ return hashText(str + '|' + sessionGenerationSeed); }
+function shuffleCopy(arr, salt=''){
+  const out=arr.slice();
+  let state=(seededNumber(salt)||1)>>>0;
+  for(let i=out.length-1;i>0;i--){
+    state ^= state << 13; state ^= state >>> 17; state ^= state << 5; state >>>= 0;
+    const j=state%(i+1); [out[i],out[j]]=[out[j],out[i]];
+  }
+  return out;
 }
 
 function tweakFact(fact, mode){
@@ -9279,7 +9174,7 @@ function tweakFact(fact, mode){
     [/\b0\b/,'1'], [/\b1\b/,'0']
   ];
   let out = fact;
-  const start = (hashText(fact) + mode) % swaps.length;
+  const start = (seededNumber(fact) + mode) % swaps.length;
   for(let k=0;k<swaps.length;k++){
     const [re,rep] = swaps[(start+k)%swaps.length];
     if(re.test(out)){ out = out.replace(re,rep); if(out !== fact) return out; }
@@ -9293,160 +9188,117 @@ function tweakFact(fact, mode){
   return 'The opposite is true: ' + out;
 }
 
-const TOPIC_RULES = [
-  {name:'Python', re:/\bpython\b|\bdef\s+\w+\s*\(|list comprehension|\bdictionary\b|\btuple\b|frozenset|valueerror|\blegb\b|\b__\w+__\b/i},
-  {name:'Bash Scripting', re:/\bbash\b|shell scripting|\bshebang\b|\[\[|\$[@*?!#$0-9]|positional argument|exit status|\(\(/i},
-  {name:'Docker', re:/\bdocker\b|dockerfile|docker compose|container image|\bcontainer(s|ization)?\b/i},
-  {name:'Kubernetes', re:/\bkubernetes\b|\bk8s\b|\bkubectl\b|\bpod(s)?\b|deployment|serviceaccount|configmap|\bingress\b/i},
-  {name:'Terraform', re:/\bterraform\b|\bterraform\s+(init|plan|apply|destroy)\b|\b\.tf\b|\bprovider\b.*\bresource\b/i},
-  {name:'Ansible', re:/\bansible\b|\bplaybook\b|\binventory\b|\bansible-playbook\b/i},
-  {name:'Jenkins', re:/\bjenkins\b|jenkinsfile|\bpipeline\b.*\bstage\b/i},
-  {name:'CI/CD', re:/\bci\/?cd\b|continuous integration|continuous delivery|continuous deployment|build pipeline|deployment pipeline/i},
-  {name:'Git', re:/\bgit\b|github|gitlab|\bcommit\b|\bbranch\b|\bmerge\b|\brebase\b|pull request/i},
-  {name:'AWS', re:/\baws\b|amazon web services|\bec2\b|\bs3\b|\biam\b|\bvpc\b|cloudwatch|lambda|route 53|elastic load balancer|\belb\b/i},
-  {name:'Cloud & Virtualization', re:/public cloud|private cloud|hybrid cloud|\bcloud\b|virtual machine|\bvm\b|hypervisor|bare metal|virtualization/i},
-  {name:'Linux Networking', re:/\bnetwork(ing)?\b|\bip addr\b|\bip route\b|\bping\b|\bnetstat\b|\bss\b|\bcurl\b|\bwget\b|\bdns\b|\bport\b|\bfirewall\b/i},
-  {name:'SSH', re:/\bssh\b|secure shell|\.pem\b|authorized_keys|known_hosts/i},
-  {name:'Linux Permissions', re:/\bchmod\b|\bchown\b|\bchgrp\b|permission(s)?|read write execute|\bumask\b/i},
-  {name:'Linux Processes', re:/\bprocess(es)?\b|\bps\b|\btop\b|\bhtop\b|\bkill\b|\bpkill\b|\bnice\b|\brenice\b|signal/i},
-  {name:'Users & Groups', re:/\buser(add|mod|del)?\b|\bgroup(add|mod|del)?\b|\bpasswd\b|\buid\b|\bgid\b|\/etc\/passwd|\/etc\/group/i},
-  {name:'Package Management', re:/\bapt\b|\byum\b|\bdnf\b|package manager|install package|repository/i},
-  {name:'Systemd & Services', re:/\bsystemctl\b|\bsystemd\b|\bjournalctl\b|\bservice\b|daemon/i},
-  {name:'Storage & Filesystems', re:/filesystem|file system|\bmount\b|\bumount\b|\bdf\b|\bdu\b|\blsblk\b|\bblkid\b|\binode\b|\bext4\b|\bxfs\b|\blvm\b|\bswap\b/i},
-  {name:'Linux Commands', re:/\bpwd\b|\bls\b|\bcd\b|\bmkdir\b|\btouch\b|\bcp\b|\bmv\b|\brm\b|\bfind\b|\bgrep\b|\bawk\b|\bsed\b|\btar\b/i},
-  {name:'SQL & Databases', re:/\bsql\b|database|\bselect\b.*\bfrom\b|\bjoin\b|primary key|foreign key|mysql|postgres/i},
-  {name:'Monitoring & Logs', re:/monitoring|observability|\blog(s|ging)?\b|metrics|alerting|prometheus|grafana|cloudwatch/i},
-  {name:'Security', re:/\bsecurity\b|encryption|authentication|authorization|least privilege|secret(s)?|credential(s)?|vulnerabilit/i}
-];
-
-function detectKnownTopic(line){
-  for(const rule of TOPIC_RULES){ if(rule.re.test(line)) return rule.name; }
-  return null;
-}
-
-function cleanHeading(line){
-  return line
-    .replace(/^\s*(?:chapter|section|part)?\s*\d+(?:\.\d+)*\s*[:.)-]?\s*/i,'')
-    .replace(/^[-•#*]+\s*/,'')
-    .replace(/\s+[-–—]\s+(reference\s+)?notes.*$/i,'')
-    .replace(/\s+/g,' ')
-    .trim();
-}
-
-function headingCandidate(line){
-  const t=cleanHeading(line);
-  if(!t || t.length<3 || t.length>70) return null;
-  if(/[.!?]$/.test(t)) return null;
-  if(/^(example|examples|output|syntax|copy|note|notes|summary|key takeaways|interview questions?)$/i.test(t)) return null;
-  const words=t.split(/\s+/);
-  if(words.length>9) return null;
-  // Prefer lines that look like titles, not prose sentences.
-  const titleish = /^[A-Z0-9][A-Za-z0-9 &/+().:_-]*$/.test(t) ||
-                   words.filter(w=>/^[A-Z][A-Za-z0-9/+()._-]*$/.test(w)).length >= Math.ceil(words.length*0.6);
-  return titleish ? t : null;
-}
-
-function normalizeDynamicTopic(title){
-  const known=detectKnownTopic(title);
-  if(known) return known;
-  let t=cleanHeading(title)
-    .replace(/\b(interview|reference|detailed|complete|common|basic|advanced|introduction to)\b/ig,'')
-    .replace(/\s+/g,' ')
-    .trim();
-  if(!t || t.length<3) return null;
-  // Keep automatically-created buttons readable on phone.
-  if(t.length>34) t=t.slice(0,34).replace(/\s+\S*$/,'').trim();
-  return t;
-}
-
 function classifyNoteLine(line, current){
-  return detectKnownTopic(line) || current || 'Notes Review';
+  const l=line.toLowerCase();
+  if(/python|\bdef\b|list comprehension|dictionary|tuple|frozenset|exception|valueerror|\blegb\b|print\(|\.append\(|\.extend\(|\.sort\(/.test(l)) return 'Python';
+  if(/bash|shell|shebang|\[\[|\$[@*?!#$0-9]|positional argument|exit status|\(\(|\bgrep\b|\bsed\b|\bawk\b|\bfind\b|\bchmod\b|\bchown\b|\bsystemctl\b/.test(l)) return 'Bash Scripting';
+  return current || 'Notes Review';
+}
+
+function looksLikeShellCommand(line){
+  return /^(?:sudo\s+)?(?:ls|cd|pwd|mkdir|touch|cp|mv|rm|cat|head|tail|grep|sed|awk|find|wc|sort|du|df|free|ps|pgrep|kill|jobs|bg|fg|nohup|chmod|chown|useradd|usermod|export|tar|curl|wget|ssh|scp|systemctl|journalctl|docker|git|echo)\b/.test(line.trim());
+}
+function looksLikePythonCode(line){
+  return /^(?:def\s+\w+\s*\(|class\s+\w+|print\s*\(|\w+\s*=|if\s+.+:|elif\s+.+:|else\s*:|for\s+.+:|while\s+.+:|return\b|import\s+|from\s+\w+\s+import\s+)/.test(line.trim());
+}
+function makeExactCheck(expected){
+  const target=normalize(expected.replace(/\s+/g,' '));
+  return n => normalize(n)===target;
+}
+function makeScriptCheck(expected){
+  const target=normalizeScript(expected);
+  return raw => normalizeScript(raw)===target;
+}
+function makePythonCheck(expected){
+  const target=normalizePyScript(expected).replace(/\s+/g,' ').trim().toLowerCase();
+  return raw => normalizePyScript(raw).replace(/\s+/g,' ').trim().toLowerCase()===target;
 }
 
 function buildAutoQuestions(text){
-  const rawLines = text.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const raw = text.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').trim());
+  const cleaned = raw.map(x=>x.replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim());
+  const generated=[];
   const seen=new Set();
-  const buckets={};
   let currentCat='Notes Review';
 
-  for(const line0 of rawLines){
-    let line=line0.replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim();
+  // 1) Large factual MCQ pool: keep every useful unique fact instead of capping at 32.
+  for(const line of cleaned){
     if(!line) continue;
-
-    // A short heading changes the active topic. Known technologies win;
-    // otherwise a genuine heading becomes its own selectable topic.
-    const heading=headingCandidate(line);
-    if(heading){
-      const nextTopic=normalizeDynamicTopic(heading);
-      if(nextTopic) currentCat=nextTopic;
-    }
-
-    if(line.length < 18 || line.length > 190) continue;
+    if(/^python\b/i.test(line) && line.length < 90) currentCat='Python';
+    else if(/^(bash|shell|linux)\b/i.test(line) && line.length < 90) currentCat=/linux/i.test(line)?'Notes Review':'Bash Scripting';
+    if(line.length < 18 || line.length > 220) continue;
     const cat=classifyNoteLine(line,currentCat);
-    const factLike = /\b(is|are|means|stands for|used to|returns?|cannot|can |supports?|stores?|prints?|shows?|defines?|allows?|requires?|equals?|used for|provides?|contains?|creates?|runs?|executes?|compiles?|interprets?)\b/i.test(line) || /\b[-]{1,2}[a-zA-Z]+\b/.test(line);
+    const factLike=/\b(is|are|means|stands for|used to|returns?|cannot|can |supports?|stores?|prints?|shows?|defines?|allows?|requires?|equals?|difference|purpose|used when|used for)\b/i.test(line) || /\b[-]{1,2}[a-zA-Z]+\b/.test(line);
     if(!factLike) continue;
-    const key=(cat+'|'+line).toLowerCase();
-    if(seen.has(key)) continue;
-    seen.add(key);
-    if(!buckets[cat]) buckets[cat]=[];
-    buckets[cat].push(line);
-  }
-
-  // Remove noisy one-off inferred headings unless they have enough material.
-  // Known technology topics are allowed with one fact so a newly-added topic
-  // can appear immediately after an upload.
-  const knownNames=new Set(TOPIC_RULES.map(r=>r.name));
-  const cats=Object.keys(buckets).filter(cat => knownNames.has(cat) || cat==='Notes Review' || buckets[cat].length>=2);
-
-  const chosen=[];
-  const maxAuto=48;
-  // First pass: guarantee coverage so every useful detected topic can become
-  // a selectable button (up to the overall safety cap).
-  for(const cat of cats){
-    if(chosen.length>=maxAuto) break;
-    if(buckets[cat].length) chosen.push({cat,line:buckets[cat][0]});
-  }
-  // Second pass: round-robin extra questions so large topics do not crowd out
-  // new smaller topics.
-  let depth=1, added=true;
-  while(chosen.length<maxAuto && added){
-    added=false;
-    for(const cat of cats){
-      if(chosen.length>=maxAuto) break;
-      if(buckets[cat] && buckets[cat][depth]){
-        chosen.push({cat,line:buckets[cat][depth]});
-        added=true;
-      }
-    }
-    depth++;
-  }
-
-  return chosen.map(({cat,line})=>{
+    const key='mcq|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
     const distractors=[];
-    for(let mode=1; distractors.length<3 && mode<12; mode++){
+    for(let mode=1; distractors.length<3 && mode<20; mode++){
       let d=tweakFact(line,mode);
-      if(d===line || distractors.includes(d)) d='Incorrect variation '+mode+': '+tweakFact(line,mode+13);
-      if(!distractors.includes(d) && d!==line) distractors.push(d);
+      if(d!==line && !distractors.includes(d)) distractors.push(d);
     }
-    while(distractors.length<3) distractors.push('Incorrect variation: '+line.replace(/\b(is|are|can)\b/i,'is not'));
-    const opts=[line,...distractors.slice(0,3)];
-    const rot=hashText(line)%4;
-    const shifted=opts.slice(rot).concat(opts.slice(0,rot));
+    while(distractors.length<3) distractors.push('Not this statement: '+line);
+    const opts=shuffleCopy([line,...distractors.slice(0,3)],'mcq|'+line);
     const ids=['a','b','c','d'];
-    const options=shifted.map((t,i)=>({id:ids[i],text:t}));
-    const correctId=ids[shifted.indexOf(line)];
-    return {cat,pts:10,type:'mcq',auto:true,scenario:'Which statement matches your latest uploaded notes?',options,correctId,hints:['One option preserves the wording and meaning from your notes; the others contain a changed detail.','Look for changes such as not/never, swapped data types, reversed order, or altered numeric values.'],sample:line,explain:'<b>From your uploaded notes:</b> '+escapeHtml(line)};
-  });
+    generated.push({cat,pts:10,type:'mcq',auto:true,scenario:'Which statement matches your latest notes?',options:opts.map((t,i)=>({id:ids[i],text:t})),correctId:ids[opts.indexOf(line)],hints:['Compare each option carefully with the concept as written in your notes.','Watch for a changed keyword, data type, direction, negation, or number.'],sample:line,explain:'<b>From your uploaded notes:</b> '+escapeHtml(line)});
+  }
+
+  // 2) Turn command examples into terminal-style recall questions.
+  for(const line of cleaned){
+    if(!looksLikeShellCommand(line) || line.length>150) continue;
+    const key='cmd|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    generated.push({cat:'Bash Scripting',pts:15,type:'command',auto:true,
+      scenario:'Your latest notes include this shell command/example. Reproduce it at the terminal (equivalent spacing is accepted):\n\n'+line,
+      hints:['Recall the command/example from the notes.','Focus on the command name, flags, arguments, and redirection/pipes.'],sample:line,check:makeExactCheck(line),
+      explain:'<b>Notes-derived command practice:</b> '+escapeHtml(line)});
+  }
+
+  // 3) Turn short Python examples into hands-on code recall challenges.
+  for(let i=0;i<cleaned.length;i++){
+    const first=cleaned[i];
+    if(!looksLikePythonCode(first)) continue;
+    const block=[first];
+    for(let j=i+1;j<Math.min(cleaned.length,i+5);j++){
+      const ln=cleaned[j];
+      if(!ln || /^(Output|Example|Syntax|Copy|Explanation|Time Complexity|Interview Questions|Summary)\b/i.test(ln)) break;
+      if(looksLikePythonCode(ln) || /^\s+/.test(raw[j]) || /^(else:|elif\b|return\b|print\()/.test(ln)) block.push(ln); else break;
+    }
+    const code=block.join('\n');
+    if(code.length<8 || code.length>360) continue;
+    const key='py|'+code.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    generated.push({cat:'Python',pts:20,type:'python',auto:true,
+      scenario:'Recreate this Python example from your latest notes in the code editor:\n\n'+code,
+      hints:['Recreate the logic shown in the notes; harmless spacing differences are accepted.','Keep the same statements, names, and values as the note example.'],sample:code,check:makePythonCheck(code),
+      explain:'<b>Notes-derived Python practice.</b> The target is the example saved in your latest notes.'});
+  }
+
+  // 4) Turn obvious shell-control/script lines into Bash editor challenges.
+  for(let i=0;i<cleaned.length;i++){
+    const line=cleaned[i];
+    if(!line || !(/^(if\s|for\s|while\s|case\s|function\s|\w+\(\)\s*\{|#!\/bin\/)/.test(line))) continue;
+    const block=[line];
+    for(let j=i+1;j<Math.min(cleaned.length,i+8);j++){
+      const ln=cleaned[j]; if(!ln) break;
+      block.push(ln);
+      if(/^(fi|done|esac|})$/.test(ln)) break;
+    }
+    const script=block.join('\n'); if(script.length>500) continue;
+    const key='bash|'+script.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    generated.push({cat:'Bash Scripting',pts:20,type:'bash',auto:true,
+      scenario:'Recreate this Bash/script example from your latest notes:\n\n'+script,
+      hints:['Recreate the script structure from the notes.','Keep the same commands, tests, variables, and control-flow keywords.'],sample:script,check:makeScriptCheck(script),
+      explain:'<b>Notes-derived Bash practice.</b> The target is the script/example saved in your latest notes.'});
+  }
+
+  return shuffleCopy(generated,'pool-build');
 }
-function refreshQuestionBank(text){
+
+function refreshQuestionBank(text, regenerate=true){
+  if(regenerate) sessionGenerationSeed = Date.now() ^ Math.floor(Math.random()*0x7fffffff);
   const generated=buildAutoQuestions(text);
   QUESTIONS.splice(0,QUESTIONS.length,...BASE_QUESTIONS,...generated);
   autoQuestionCount=generated.length;
   ALL_CATS=[...new Set(QUESTIONS.map(q=>q.cat))];
-  if(setupState && setupState.scope==='topic'){
-    setupState.topics = (setupState.topics || []).filter(t => ALL_CATS.includes(t));
-    if(setupState.topics.length === 0 && ALL_CATS.length) setupState.topics = [ALL_CATS[0]];
-  }
+  if(setupState && setupState.scope==='topic' && !ALL_CATS.includes(setupState.topic)) setupState.topic=ALL_CATS[0];
 }
 
 /* ============================= STATE ============================= */
@@ -9462,7 +9314,7 @@ const MAX_ATTEMPTS = 3;
 let totalPossible = 0;
 let catScores = {};
 let ALL_CATS = [...new Set(QUESTIONS.map(q => q.cat))];
-let setupState = { scope: 'full', topics: [], style: 'mix' };
+let setupState = { scope: 'full', topic: null, style: 'mix', count: 32 };
 
 const termBody = document.getElementById('termBody');
 const statQNum = document.getElementById('statQNum');
@@ -9490,7 +9342,7 @@ function pipsHtml(){
 function filteredIndices(state){
   return QUESTIONS.map((q,i)=>i).filter(i=>{
     const q = QUESTIONS[i];
-    if(state.scope === 'topic' && (!state.topics || state.topics.length === 0 || !state.topics.includes(q.cat))) return false;
+    if(state.scope === 'topic' && state.topic && q.cat !== state.topic) return false;
     if(state.style === 'code' && q.type === 'mcq') return false;
     if(state.style === 'mcq' && q.type !== 'mcq') return false;
     return true;
@@ -9499,30 +9351,25 @@ function filteredIndices(state){
 
 function renderSetup(){
   const idxs = filteredIndices(setupState);
-  const count = idxs.length;
-  const pts = idxs.reduce((s,i)=>s+QUESTIONS[i].pts, 0);
+  const poolCount = idxs.length;
+  const quizCount = Math.min(setupState.count === 'all' ? poolCount : Number(setupState.count || 32), poolCount);
+  const avgPts = poolCount ? idxs.reduce((s,i)=>s+QUESTIONS[i].pts,0)/poolCount : 0;
+  const pts = Math.round(avgPts * quizCount);
 
   const scopeHtml =
     '<div class="setup-block">' +
       '<div class="label">Scope</div>' +
       '<div class="setup-grid">' +
-        '<button type="button" class="setup-opt' + (setupState.scope==='full' ? ' sel' : '') + '" onclick="setSetupScope(\'full\')">' +
+        '<button class="setup-opt' + (setupState.scope==='full' ? ' sel' : '') + '" onclick="setSetupScope(\'full\')">' +
           '<div class="t">Full runthrough challenge</div><div class="d">Linux + Bash + Python + notes-derived review, all shuffled</div>' +
         '</button>' +
-        '<button type="button" class="setup-opt' + (setupState.scope==='topic' ? ' sel' : '') + '" onclick="setSetupScope(\'topic\')">' +
-          '<div class="t">Topic-specific challenge</div><div class="d">Choose one or multiple topics — Python, Bash, Linux, and more</div>' +
+        '<button class="setup-opt' + (setupState.scope==='topic' ? ' sel' : '') + '" onclick="setSetupScope(\'topic\')">' +
+          '<div class="t">Topic-specific challenge</div><div class="d">Choose Python, Bash, Linux topics, and more</div>' +
         '</button>' +
       '</div>' +
       (setupState.scope === 'topic'
-        ? '<div style="margin-top:8px;">' +
-            '<div class="setup-sub" style="margin:0 0 8px;">Select as many topics as you want.</div>' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
-              '<button type="button" class="reset-btn" onclick="selectAllTopics()">Select all</button>' +
-              '<button type="button" class="reset-btn" onclick="clearTopics()">Clear</button>' +
-            '</div>' +
-            '<div class="setup-grid">' +
-              ALL_CATS.map(c => '<button type="button" class="setup-opt' + ((setupState.topics||[]).includes(c) ? ' sel' : '') + '" onclick="toggleSetupTopic(decodeURIComponent(\'' + encodeURIComponent(c) + '\'))"><div class="t">' + (((setupState.topics||[]).includes(c)) ? '✓ ' : '') + escapeHtml(c) + '</div></button>').join('') +
-            '</div>' +
+        ? '<div class="setup-grid" style="margin-top:8px;">' +
+            ALL_CATS.map(c => '<button class="setup-opt' + (setupState.topic===c ? ' sel' : '') + '" onclick="setSetupTopic(' + JSON.stringify(c) + ')"><div class="t">' + escapeHtml(c) + '</div></button>').join('') +
           '</div>'
         : '') +
     '</div>';
@@ -9531,31 +9378,42 @@ function renderSetup(){
     '<div class="setup-block">' +
       '<div class="label">Question style</div>' +
       '<div class="setup-grid">' +
-        '<button type="button" class="setup-opt' + (setupState.style==='code' ? ' sel' : '') + '" onclick="setSetupStyle(\'code\')">' +
+        '<button class="setup-opt' + (setupState.style==='code' ? ' sel' : '') + '" onclick="setSetupStyle(\'code\')">' +
           '<div class="t">Commands / coding only</div><div class="d">Linux commands, vi, Bash scripts, and Python code — no MCQs</div>' +
         '</button>' +
-        '<button type="button" class="setup-opt' + (setupState.style==='mcq' ? ' sel' : '') + '" onclick="setSetupStyle(\'mcq\')">' +
+        '<button class="setup-opt' + (setupState.style==='mcq' ? ' sel' : '') + '" onclick="setSetupStyle(\'mcq\')">' +
           '<div class="t">MCQs only</div><div class="d">Concept checks, including questions regenerated from your latest notes</div>' +
         '</button>' +
-        '<button type="button" class="setup-opt' + (setupState.style==='mix' ? ' sel' : '') + '" onclick="setSetupStyle(\'mix\')">' +
+        '<button class="setup-opt' + (setupState.style==='mix' ? ' sel' : '') + '" onclick="setSetupStyle(\'mix\')">' +
           '<div class="t">Mixed</div><div class="d">MCQs + Linux commands + Bash + Python coding</div>' +
         '</button>' +
+      '</div>' +
+    '</div>';
+
+  const countChoices=[10,20,32,50];
+  const lengthHtml =
+    '<div class="setup-block">' +
+      '<div class="label">Quiz length</div>' +
+      '<div class="setup-grid">' +
+        countChoices.map(n=>'<button class="setup-opt' + (setupState.count===n ? ' sel' : '') + '" onclick="setSetupCount(' + n + ')"><div class="t">' + n + ' questions</div><div class="d">Randomly selected from the current pool</div></button>').join('') +
+        '<button class="setup-opt' + (setupState.count==='all' ? ' sel' : '') + '" onclick="setSetupCount(\'all\')"><div class="t">All available</div><div class="d">Use every question matching this selection</div></button>' +
       '</div>' +
     '</div>';
 
   termBody.innerHTML =
     '<div class="setup-screen">' +
       '<h2>&gt; choose your drill_</h2>' +
-      '<div class="setup-sub">Pick a scope and question style. Your latest uploaded notes currently contribute ' + autoQuestionCount + ' auto-generated MCQ' + (autoQuestionCount===1?'':'s') + '.</div>' +
+      '<div class="setup-sub">Pick a scope, style, and drill length. Your latest notes currently contribute ' + autoQuestionCount + ' auto-generated questions to a larger pool that is rebuilt each time this file opens.</div>' +
       scopeHtml +
       styleHtml +
+      lengthHtml +
       '<div class="setup-start-row">' +
-        '<span class="setup-count">' + count + ' question' + (count===1?'':'s') + ' · ' + pts + ' pts available</span>' +
-        '<button type="button" class="setup-start-btn" ' + (count===0 ? 'disabled' : '') + ' onclick="startChallenge()">Start ▸</button>' +
+        '<span class="setup-count">' + quizCount + ' selected from ' + poolCount + ' available · about ' + pts + ' pts</span>' +
+        '<button class="setup-start-btn" ' + (poolCount===0 ? 'disabled' : '') + ' onclick="startChallenge()">Start ▸</button>' +
       '</div>' +
     '</div>';
 
-  statQNum.textContent = '— / ' + count;
+  statQNum.textContent = '— / ' + quizCount;
   statScore.textContent = '0 pts';
   statCorrect.textContent = '0';
   statWrong.textContent = '0';
@@ -9564,26 +9422,20 @@ function renderSetup(){
 
 function setSetupScope(scope){
   setupState.scope = scope;
-  if(scope === 'full'){ setupState.topics = []; }
-  else if(!setupState.topics || setupState.topics.length === 0){ setupState.topics = ALL_CATS.length ? [ALL_CATS[0]] : []; }
+  if(scope === 'full'){ setupState.topic = null; }
+  else if(!setupState.topic){ setupState.topic = ALL_CATS[0]; }
   renderSetup();
 }
-function toggleSetupTopic(topic){
-  if(!setupState.topics) setupState.topics = [];
-  if(setupState.topics.includes(topic)) setupState.topics = setupState.topics.filter(t => t !== topic);
-  else setupState.topics.push(topic);
-  renderSetup();
-}
-function selectAllTopics(){
-  setupState.topics = [...ALL_CATS];
-  renderSetup();
-}
-function clearTopics(){
-  setupState.topics = [];
+function setSetupTopic(topic){
+  setupState.topic = topic;
   renderSetup();
 }
 function setSetupStyle(style){
   setupState.style = style;
+  renderSetup();
+}
+function setSetupCount(count){
+  setupState.count = count;
   renderSetup();
 }
 
@@ -9594,11 +9446,13 @@ function startChallenge(){
     const j = Math.floor(Math.random() * (i + 1));
     [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
   }
-  order = idxs;
+  const requested = setupState.count === 'all' ? idxs.length : Math.min(Number(setupState.count || 32), idxs.length);
+  const selected = idxs.slice(0, requested);
+  order = selected;
   qIndex = 0; score = 0; correctCount = 0; wrongCount = 0;
-  totalPossible = idxs.reduce((s,i)=>s+QUESTIONS[i].pts, 0);
+  totalPossible = selected.reduce((s,i)=>s+QUESTIONS[i].pts, 0);
   catScores = {};
-  idxs.forEach(i=>{
+  selected.forEach(i=>{
     const q = QUESTIONS[i];
     if(!catScores[q.cat]) catScores[q.cat] = {earned:0, possible:0};
     catScores[q.cat].possible += q.pts;
@@ -9615,7 +9469,6 @@ function renderQuestion(){
   resolved = false;
   const q = QUESTIONS[order[qIndex]];
   const isCode = (q.type === 'bash' || q.type === 'python');
-  const isVi = q.type === 'vi';
   const isMcq = q.type === 'mcq';
   termTitle.textContent = q.type === 'python' ? 'python3 — code challenge — 80x24' : (q.type === 'bash' ? 'bash — script challenge — 80x24' : (isMcq ? 'quiz — concept check — 80x24' : 'bash — ops-drill — 80x24'));
   statQNum.textContent = (qIndex+1) + ' / ' + order.length;
@@ -9632,18 +9485,12 @@ function renderQuestion(){
     const codeNoun = q.type === 'python' ? 'code' : 'script';
     const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
     interactionHtml =
-      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). ' + (q.type === 'python' ? 'Your Python is executed in the challenge\'s test environment; grading is based on output/state/return behavior, not matching the sample syntax. Use “Run / show my output” to test the code currently in the box without consuming an attempt. ' : 'Equivalent working shell forms are accepted. ') + 'Indentation is preserved. Tab / Shift+Tab indent or outdent; on phones use the indentation buttons. Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
+      (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
-          ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>' +
-            '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'cmdInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'cmdInput\')">⇤ Outdent</button></div>'
+          ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>'
           : '<input type="text" id="cmdInput" class="cmd-input" placeholder="type the command…" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
-        (q.type === 'python'
-          ? '<div class="runtime-output-wrap"><button type="button" class="hint-btn" id="previewPythonBtn" onclick="showMyPythonOutput()">▶ Run / show my output</button><span class="bash-hint" style="margin-left:8px">First run may take a few seconds while Python loads.</span><div id="runtimeOutputPanel" class="runtime-output-panel"></div></div>'
-          : (((q.type === 'bash' || isVi) && q.sampleOutput)
-            ? '<div class="sample-output-wrap"><button type="button" class="hint-btn" onclick="toggleSampleOutput()">▸ View expected result</button><div id="sampleOutputPanel" class="sample-output-panel"><div class="sample-output-title">Expected result</div><pre id="sampleOutputPre" class="sample-output-pre"></pre></div></div>'
-            : '')) +
         '<div class="btn-group">' +
           '<button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button>' +
           '<button class="go-btn" id="submitBtn" onclick="submitAnswer()">' + (isCode ? 'Run ' + codeNoun + ' ▸' : 'Run ▸') + '</button>' +
@@ -9673,13 +9520,7 @@ function renderQuestion(){
     input.focus();
     if(isCode){
       input.addEventListener('keydown', (e)=>{
-        if(e.key === 'Tab'){
-          e.preventDefault();
-          if(e.shiftKey) outdentEditor('cmdInput'); else indentEditor('cmdInput');
-          return;
-        }
-        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); submitAnswer(); return; }
-        if(e.key === 'Enter'){ autoIndentNewline(e, input, q.type); }
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ submitAnswer(); }
       });
     } else {
       input.addEventListener('keydown', (e)=>{
@@ -9688,138 +9529,6 @@ function renderQuestion(){
     }
   }
 }
-
-function setEditorValuePreserve(el, value, start, end){
-  el.value = value;
-  el.selectionStart = start;
-  el.selectionEnd = end;
-  el.focus();
-}
-
-function indentEditor(id){
-  const el = document.getElementById(id);
-  if(!el) return;
-  const value = el.value;
-  const start = el.selectionStart ?? 0;
-  const end = el.selectionEnd ?? start;
-  const lineStart = value.lastIndexOf('\n', Math.max(0,start-1)) + 1;
-  const selected = value.slice(lineStart, end);
-  if(selected.includes('\n')){
-    const indented = selected.replace(/^/gm, '    ');
-    const nv = value.slice(0,lineStart) + indented + value.slice(end);
-    setEditorValuePreserve(el, nv, start+4, end + (indented.length-selected.length));
-  } else {
-    const nv = value.slice(0,start) + '    ' + value.slice(end);
-    setEditorValuePreserve(el, nv, start+4, start+4);
-  }
-}
-
-function outdentEditor(id){
-  const el = document.getElementById(id);
-  if(!el) return;
-  const value = el.value;
-  const start = el.selectionStart ?? 0;
-  const end = el.selectionEnd ?? start;
-  const lineStart = value.lastIndexOf('\n', Math.max(0,start-1)) + 1;
-  const segment = value.slice(lineStart, end);
-  const outdented = segment.replace(/^( {1,4}|\t)/gm, '');
-  const removed = segment.length - outdented.length;
-  if(removed === 0) return;
-  const nv = value.slice(0,lineStart) + outdented + value.slice(end);
-  const newStart = Math.max(lineStart, start - Math.min(4, Math.max(0,start-lineStart)));
-  setEditorValuePreserve(el, nv, newStart, Math.max(newStart, end-removed));
-}
-
-function autoIndentNewline(e, el, kind){
-  const start = el.selectionStart;
-  const end = el.selectionEnd;
-  const value = el.value;
-  const before = value.slice(0,start);
-  const line = before.slice(before.lastIndexOf('\n')+1);
-  const base = (line.match(/^\s*/) || [''])[0];
-  let extra = '';
-  if(kind === 'python' && /:\s*(#.*)?$/.test(line)) extra = '    ';
-  if(kind === 'bash' && /\b(then|do|else)\s*;?\s*$/.test(line.trim())) extra = '    ';
-  e.preventDefault();
-  const insert = '\n' + base + extra;
-  const nv = value.slice(0,start) + insert + value.slice(end);
-  const pos = start + insert.length;
-  setEditorValuePreserve(el, nv, pos, pos);
-}
-
-function toggleSampleOutput(){
-  const q = QUESTIONS[order[qIndex]];
-  if(!q || !q.sampleOutput) return;
-  const panel = document.getElementById('sampleOutputPanel');
-  const pre = document.getElementById('sampleOutputPre');
-  if(!panel || !pre) return;
-  pre.textContent = q.sampleOutput;
-  panel.classList.toggle('show');
-  const btn = panel.previousElementSibling;
-  if(btn) btn.textContent = panel.classList.contains('show') ? '▾ Hide expected result' : '▸ View expected result';
-}
-
-
-async function showMyPythonOutput(){
-  const q = QUESTIONS[order[qIndex]];
-  if(!q || q.type !== 'python') return;
-  const input = document.getElementById('cmdInput');
-  const panel = document.getElementById('runtimeOutputPanel');
-  const btn = document.getElementById('previewPythonBtn');
-  if(!input || !panel || !btn) return;
-
-  const code = input.value;
-  if(!code.trim()){
-    panel.className = 'runtime-output-panel show';
-    panel.innerHTML = '<div class="runtime-match neutral">Type some Python first, then run the preview.</div>';
-    input.focus();
-    return;
-  }
-
-  const oldText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Running your code…';
-  panel.className = 'runtime-output-panel show';
-  panel.innerHTML = '<div class="runtime-match neutral">Executing the code currently in the editor…</div>';
-
-  let result;
-  try{
-    result = await runPythonBehaviorTest(q, code);
-  }catch(err){
-    result = {ok:false, error:String(err)};
-  }
-
-  btn.disabled = false;
-  btn.textContent = oldText;
-
-  if(result && result.ok && result.result){
-    const r = result.result;
-    panel.innerHTML =
-      '<div class="runtime-block-title">Your code produced</div>' +
-      '<pre class="runtime-pre">' + escapeHtml(r.actual || '(no output/result)') + '</pre>' +
-      '<div class="runtime-block-title">Desired result</div>' +
-      '<pre class="runtime-pre">' + escapeHtml(r.expected || q.sampleOutput || '(not configured)') + '</pre>' +
-      '<div class="runtime-match ' + (r.pass ? 'pass' : 'fail') + '">' +
-        (r.pass ? '✓ MATCH — this behavior satisfies the challenge.' : '✘ NOT YET A MATCH — compare your result with the desired result above.') +
-      '</div>' +
-      (r.logic ? '<div class="vi-hint" style="margin-top:7px">' + escapeHtml(r.logic) + '</div>' : '');
-    return;
-  }
-
-  // Runtime unavailable: never invent execution output. But tell the user whether
-  // the local semantic checker recognizes the logic, and do not consume an attempt.
-  const semanticOk = pythonSemanticFallback(q, code);
-  panel.innerHTML =
-    '<div class="runtime-match ' + (semanticOk ? 'pass' : 'fail') + '">' +
-      (semanticOk
-        ? '✓ Logic check passes, but the browser Python runtime could not load, so actual Python output could not be executed here.'
-        : 'Could not execute Python in this browser, and the local logic checker does not yet verify this solution.') +
-    '</div>' +
-    '<div class="vi-hint" style="margin-top:7px">Runtime error: ' +
-      escapeHtml((result && result.error) || 'Python runtime unavailable.') +
-      '<br>This preview will only show “Your code produced” when real Python execution succeeds.</div>';
-}
-
 
 function showHint(){
   const q = QUESTIONS[order[qIndex]];
@@ -9878,295 +9587,7 @@ function youTypedHtml(raw, isCode){
   return '<div class="youtyped">you typed: <span>' + escapeHtml(raw) + '</span></div>';
 }
 
-/* ============================= BEHAVIOR-BASED PYTHON GRADING ============================= */
-let pyodideRuntime = null;
-let pyodideLoadPromise = null;
-
-function pythonTestId(q){
-  if(q.type !== 'python') return null;
-  if(q.testId) return q.testId;
-  if(q.scenario.includes('services = ["nginx", "redis", "postgres"]')) return 'services_loop';
-  if(q.scenario.includes('numbers = [1, 2, 3, 4, 5, 6]')) return 'evens';
-  if(q.scenario.includes('function called is_even')) return 'is_even';
-  if(q.scenario.includes('server_status = {"web1": "up", "web2": "down"}')) return 'server_status';
-  if(q.scenario.includes('attempts int(user_input)')) return 'value_error';
-  return null;
-}
-
-function loadExternalScript(url){
-  return new Promise((resolve,reject)=>{
-    const existing = [...document.scripts].find(s=>s.src===url);
-    if(existing){
-      if(window.loadPyodide) return resolve();
-      existing.addEventListener('load',()=>resolve(),{once:true});
-      existing.addEventListener('error',()=>reject(new Error('Failed to load '+url)),{once:true});
-      return;
-    }
-    const s=document.createElement('script');
-    s.src=url;
-    s.async=true;
-    s.onload=()=>resolve();
-    s.onerror=()=>reject(new Error('Failed to load '+url));
-    document.head.appendChild(s);
-  });
-}
-
-async function ensurePyodideRuntime(){
-  if(pyodideRuntime) return pyodideRuntime;
-  if(pyodideLoadPromise) return pyodideLoadPromise;
-
-  pyodideLoadPromise = (async ()=>{
-    const bases = [
-      'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/',
-      'https://unpkg.com/pyodide@0.27.7/'
-    ];
-    let lastErr = null;
-
-    for(const base of bases){
-      try{
-        if(!window.loadPyodide){
-          await loadExternalScript(base + 'pyodide.js');
-        }
-        if(typeof window.loadPyodide !== 'function') throw new Error('loadPyodide was not defined after loading the runtime script.');
-        pyodideRuntime = await window.loadPyodide({indexURL:base});
-        return pyodideRuntime;
-      }catch(err){
-        lastErr = err;
-        // If the first CDN partially loaded a broken global, remove it before retrying.
-        pyodideRuntime = null;
-      }
-    }
-    pyodideLoadPromise = null;
-    throw lastErr || new Error('Unable to load the Python runtime.');
-  })();
-
-  return pyodideLoadPromise;
-}
-
-async function runPythonBehaviorTest(q, code){
-  const testId = pythonTestId(q);
-  if(!testId) return {ok:false, noTest:true, error:'No executable test is configured for this Python question.'};
-
-  try{
-    const py = await ensurePyodideRuntime();
-    py.globals.set('USER_CODE', code);
-    py.globals.set('TEST_ID', testId);
-
-    const resultJson = await py.runPythonAsync(`
-import io, contextlib, json
-result = {
-    "pass": False,
-    "message": "The code ran, but its behavior did not meet the task.",
-    "actual": "",
-    "expected": "",
-    "stdout": "",
-    "logic": ""
-}
-env = {}
-
-def clean_lines(s):
-    return [x.rstrip() for x in s.splitlines() if x.strip()]
-
-try:
-    if TEST_ID == "services_loop":
-        env["services"] = ["nginx", "redis", "postgres"]
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            exec(USER_CODE, env)
-        stdout = buf.getvalue()
-        lines = [x.strip() for x in clean_lines(stdout)]
-        expected_lines = ["nginx", "redis", "postgres"]
-        result["stdout"] = stdout
-        result["actual"] = "\\n".join(lines) if lines else "(no output)"
-        result["expected"] = "\\n".join(expected_lines)
-        result["pass"] = lines == expected_lines
-        result["logic"] = "Executed your code with services = ['nginx', 'redis', 'postgres']."
-        result["message"] = "Output matches." if result["pass"] else "Your code executed, but its output differs from the required output."
-
-    elif TEST_ID == "evens":
-        env["numbers"] = [1, 2, 3, 4, 5, 6]
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            exec(USER_CODE, env)
-        got = env.get("evens", None)
-        result["stdout"] = buf.getvalue()
-        result["actual"] = "evens = " + repr(got)
-        result["expected"] = "evens = [2, 4, 6]"
-        result["pass"] = got == [2, 4, 6]
-        result["logic"] = "Executed your code and inspected the resulting variable 'evens'."
-        result["message"] = "Result matches." if result["pass"] else "The resulting value of 'evens' does not match the required list."
-
-    elif TEST_ID == "is_even":
-        exec(USER_CODE, env)
-        fn = env.get("is_even")
-        tests = [(4, True), (5, False), (0, True), (-4, True), (-5, False)]
-        observed = []
-        ok = callable(fn)
-        if ok:
-            for x, expected in tests:
-                try:
-                    got = fn(x)
-                    observed.append((x, got, expected))
-                    if got != expected:
-                        ok = False
-                except Exception as ex:
-                    observed.append((x, type(ex).__name__ + ": " + str(ex), expected))
-                    ok = False
-        else:
-            observed.append(("function", "is_even was not defined/callable", "callable function"))
-        result["actual"] = "\\n".join(f"is_even({x}) -> {got}" for x, got, _ in observed)
-        result["expected"] = "\\n".join(f"is_even({x}) -> {expected}" for x, _, expected in observed)
-        result["pass"] = ok
-        result["logic"] = "Loaded your function and called it with several positive, zero, and negative integers."
-        result["message"] = "All return-value tests passed." if ok else "At least one return-value test failed."
-
-    elif TEST_ID == "server_status":
-        env["server_status"] = {"web1": "up", "web2": "down"}
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            exec(USER_CODE, env)
-        stdout = buf.getvalue()
-        lines = [x.strip() for x in clean_lines(stdout)]
-        expected_lines = ["web1: up", "web2: down"]
-        result["stdout"] = stdout
-        result["actual"] = "\\n".join(lines) if lines else "(no output)"
-        result["expected"] = "\\n".join(expected_lines)
-        result["pass"] = lines == expected_lines
-        result["logic"] = "Executed your code with server_status = {'web1': 'up', 'web2': 'down'}."
-        result["message"] = "Output matches." if result["pass"] else "Your output does not match the required key/value lines."
-
-    elif TEST_ID == "value_error":
-        cases = [("abc", "Invalid number"), ("42", "")]
-        observed = []
-        ok = True
-        for user_input_value, expected_output in cases:
-            case_env = {"user_input": user_input_value}
-            buf = io.StringIO()
-            try:
-                with contextlib.redirect_stdout(buf):
-                    exec(USER_CODE, case_env)
-                actual_output = buf.getvalue().strip()
-            except Exception as ex:
-                actual_output = type(ex).__name__ + ": " + str(ex)
-            observed.append((user_input_value, actual_output, expected_output))
-            if actual_output != expected_output:
-                ok = False
-        result["actual"] = "\\n".join(
-            f'user_input={inp!r} -> {out if out else "(no output)"}'
-            for inp, out, _ in observed
-        )
-        result["expected"] = "\\n".join(
-            f'user_input={inp!r} -> {exp if exp else "(no output)"}'
-            for inp, _, exp in observed
-        )
-        result["pass"] = ok
-        result["logic"] = "Executed your try/except with invalid and valid input."
-        result["message"] = "Both error-handling cases passed." if ok else "Your exception-handling behavior differs in at least one test case."
-
-    else:
-        result["message"] = "No executable runtime test is configured for this Python question."
-        result["actual"] = "(runtime test unavailable)"
-        result["expected"] = "(no configured expected result)"
-except Exception as ex:
-    result["pass"] = False
-    result["message"] = type(ex).__name__ + ": " + str(ex)
-    result["actual"] = type(ex).__name__ + ": " + str(ex)
-
-json.dumps(result)
-`);
-    return {ok:true, result:JSON.parse(resultJson)};
-  }catch(err){
-    const msg = err && err.message ? err.message : String(err);
-    return {ok:false, error:msg};
-  }
-}
-
-
-function pythonSemanticFallback(q, raw){
-  const testId = pythonTestId(q);
-  const code = raw.replace(/\r/g,'');
-
-  if(testId === 'services_loop'){
-    // Accept any loop-variable name as long as the same variable is printed.
-    const m = code.match(/for\s+([A-Za-z_]\w*)\s+in\s+services\s*:\s*(?:\n[ \t]+|[ \t]+)print\s*\(\s*([A-Za-z_]\w*)\s*\)/i);
-    return !!(m && m[1].toLowerCase() === m[2].toLowerCase());
-  }
-
-  if(testId === 'evens'){
-    // Accept common correct approaches, not just one list-comprehension spelling.
-    if(/\bevens\s*=\s*\[\s*([A-Za-z_]\w*)\s+for\s+\1\s+in\s+numbers\s+if\s+\1\s*%\s*2\s*==\s*0\s*\]/i.test(code)) return true;
-    if(/\bevens\s*=\s*\[\s*\]/i.test(code) &&
-       /for\s+([A-Za-z_]\w*)\s+in\s+numbers\s*:/i.test(code) &&
-       /%\s*2\s*==\s*0/i.test(code) &&
-       /evens\.append\s*\(/i.test(code)) return true;
-    return false;
-  }
-
-  if(testId === 'is_even'){
-    if(!/def\s+is_even\s*\(\s*([A-Za-z_]\w*)\s*\)\s*:/i.test(code)) return false;
-    const p = code.match(/def\s+is_even\s*\(\s*([A-Za-z_]\w*)\s*\)/i)?.[1];
-    if(!p) return false;
-    const esc = p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    if(new RegExp('return\\s+'+esc+'\\s*%\\s*2\\s*==\\s*0','i').test(code)) return true;
-    if(new RegExp('if\\s+'+esc+'\\s*%\\s*2\\s*==\\s*0\\s*:','i').test(code) &&
-       /return\s+True/i.test(code) && /return\s+False/i.test(code)) return true;
-    return false;
-  }
-
-  if(testId === 'server_status'){
-    const m = code.match(/for\s+([A-Za-z_]\w*)\s*,\s*([A-Za-z_]\w*)\s+in\s+server_status\.items\s*\(\s*\)\s*:/i);
-    if(!m || !/print\s*\(/i.test(code)) return false;
-    // Accept f-strings, .format(), concatenation, comma-separated print, etc.
-    return code.includes(m[1]) && code.includes(m[2]);
-  }
-
-  if(testId === 'value_error'){
-    return /try\s*:/i.test(code) &&
-           /int\s*\(\s*user_input\s*\)/i.test(code) &&
-           /except\s+ValueError/i.test(code) &&
-           /print\s*\(\s*['"]Invalid number['"]\s*\)/i.test(code);
-  }
-
-  return q.check(normalizePyScript(raw));
-}
-
-
-async function gradeAnswerByBehavior(q, raw, normalized){
-  // MCQs are graded by their selected answer. vi questions are validated by final buffer state.
-  if(q.type === 'python'){
-    let result;
-    try{
-      result = await runPythonBehaviorTest(q, raw);
-    }catch(err){
-      result = {ok:false, error:(err && err.message) ? err.message : String(err)};
-    }
-
-    if(result.ok) return {
-      pass: !!result.result.pass,
-      detail: result.result.message,
-      behavior:true,
-      actual: result.result.actual || '',
-      expected: result.result.expected || '',
-      logic: result.result.logic || ''
-    };
-
-    // Runtime could not load: use semantic logic grading instead of marking correct code wrong.
-    const fallbackPass = pythonSemanticFallback(q, raw);
-    return {
-      pass: fallbackPass,
-      detail: fallbackPass
-        ? 'Python runtime could not load, but the submitted logic satisfies this challenge.'
-        : ((result.error || 'Python runtime unavailable') + ' — semantic fallback also could not verify the solution.'),
-      behavior:false,
-      fallback:true
-    };
-  }
-  // Shell/command questions already use goal-oriented validators rather than comparing
-  // against q.sample. The sample is only a reference answer.
-  return {pass: q.check(normalized), detail:'', behavior:true};
-}
-
-async function submitAnswer(){
+function submitAnswer(){
   if(resolved) return;
   const q = QUESTIONS[order[qIndex]];
   const isCode = (q.type === 'bash' || q.type === 'python');
@@ -10175,20 +9596,10 @@ async function submitAnswer(){
   if(raw.trim() === '') { input.focus(); return; }
 
   const n = q.type === 'bash' ? normalizeScript(raw) : q.type === 'python' ? normalizePyScript(raw) : normalize(raw);
+  const pass = q.check(n);
   const outputArea = document.getElementById('outputArea');
   const feedbackArea = document.getElementById('feedbackArea');
-  const acceptedLabel = q.type === 'python' ? 'code accepted by output tests' : q.type === 'bash' ? 'script accepted' : 'command accepted';
-  const submitBtn = document.getElementById('submitBtn');
-  const oldBtnText = submitBtn ? submitBtn.textContent : '';
-  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = q.type === 'python' ? 'Testing output…' : 'Checking…'; }
-  let grading;
-  try {
-    grading = await gradeAnswerByBehavior(q, raw, n);
-  } catch(err) {
-    grading = {pass:false, detail:String(err), behavior:false};
-  }
-  if(submitBtn && !resolved){ submitBtn.disabled = false; submitBtn.textContent = oldBtnText; }
-  const pass = grading.pass;
+  const acceptedLabel = q.type === 'python' ? 'code accepted' : q.type === 'bash' ? 'script accepted' : 'command accepted';
 
   if(pass){
     if(q.type === 'vi'){
@@ -10200,12 +9611,6 @@ async function submitAnswer(){
       '<div class="output-block">' +
         youTypedHtml(raw, isCode) +
         '<div class="verdict pass">✔ PASS — ' + acceptedLabel + ' (attempt ' + (attempts+1) + ' of ' + MAX_ATTEMPTS + ')</div>' +
-        (q.type === 'python' && grading.behavior
-          ? '<div class="feedback-line">✓ Your code was actually executed. The grader checks the resulting output/state/return values, not whether your variable names or syntax match the notes.</div>' +
-            (grading.actual ? '<div class="runtime-block-title">Observed result</div><pre class="runtime-pre">' + escapeHtml(grading.actual) + '</pre>' : '')
-          : (q.type === 'python' && grading.fallback
-            ? '<div class="feedback-line">✓ Runtime execution was unavailable, so a semantic logic fallback was used. This fallback ignores arbitrary variable names and accepts equivalent solution forms.</div>'
-            : '')) +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
@@ -10224,17 +9629,17 @@ async function submitAnswer(){
       '<div class="output-block">' +
         youTypedHtml(raw, isCode) +
         '<div class="verdict fail">✘ FAIL — out of attempts</div>' +
-        (q.type === 'python' && grading.detail ? '<div class="feedback-line retry">Grader: ' + escapeHtml(grading.detail) + '</div>' : '') +
-        '<div class="sample">One reference solution is: <code>' + escapeHtml(q.sample) + '</code></div>' +
+        '<div class="sample">A correct answer was: <code>' + escapeHtml(q.sample) + '</code></div>' +
         '<div class="explain"><b>Reference:</b> ' + q.explain + '</div>' +
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
   } else {
-    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ Not quite — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. ' + (grading.detail ? escapeHtml(grading.detail) + ' ' : '') + 'Try again.</div>';
+    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ Not quite — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. Try again.</div>';
     // auto-reveal the next hint on a wrong attempt
     if(hintsShown < attempts){
       showHint();
     }
+    input.value = '';
     input.focus();
   }
 }
@@ -10361,13 +9766,12 @@ function renderViUI(){
         '<span class="vi-editlabel">' + viState.editLabel + ':</span>' +
         '<input type="text" id="viLineInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeAttr(viState.editValue) + '">' +
       '</div>' +
-      '<div class="editor-tools"><button type="button" class="editor-tool-btn" onclick="indentEditor(\'viLineInput\')">↹ Indent</button><button type="button" class="editor-tool-btn" onclick="outdentEditor(\'viLineInput\')">⇤ Outdent</button></div>' +
-      '<div class="vi-hint">Enter to confirm this line · Esc to cancel · Tab / Shift+Tab also control indentation</div>';
+      '<div class="vi-hint">Enter to confirm this line · Esc to cancel</div>';
   } else if(viState.mode === 'command'){
     bottomHtml =
       '<div class="vi-editrow">' +
         '<span class="vi-editlabel">:</span>' +
-        '<input type="text" id="viCmdInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="w / wq / x / q!">' +
+        '<input type="text" id="viCmdInput" class="vi-line-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="wq / q! / w">' +
       '</div>' +
       '<div class="vi-hint">Enter to run · Esc to cancel</div>';
   } else {
@@ -10375,7 +9779,7 @@ function renderViUI(){
   }
 
   viArea.innerHTML =
-    '<div class="vi-editor" id="viEditorRoot" tabindex="0">' +
+    '<div class="vi-editor">' +
       '<div class="vi-titlebar">"' + q.viFile + '" (simulated vi) — line ' + (viState.cursorLine+1) + '/' + viState.buffer.length + '</div>' +
       '<div class="vi-buffer">' + linesHtml + '</div>' +
       bottomHtml +
@@ -10392,17 +9796,6 @@ function renderViUI(){
         '<button class="vi-key vi-key-esc" onclick="viCmd(\'Esc\')">Esc</button>' +
         '<button class="vi-key vi-key-colon" onclick="viCmd(\':\')">: command</button>' +
       '</div>' +
-      '<div class="vi-save-shortcuts">' +
-        '<div class="vi-save-title">Save / exit shortcuts</div>' +
-        '<div class="vi-save-row">' +
-          '<button class="vi-save-key" onclick="viQuickCommand(\'w\')">Esc → :w ↵</button>' +
-          '<button class="vi-save-key primary" onclick="viQuickCommand(\'wq\')">Esc → :wq ↵</button>' +
-          '<button class="vi-save-key primary" onclick="viQuickCommand(\'ZZ\')">ZZ · save + quit</button>' +
-          '<button class="vi-save-key" onclick="viQuickCommand(\'q!\')">Esc → :q! ↵</button>' +
-          '<button class="vi-save-key" onclick="viQuickCommand(\'ZQ\')">ZQ · quit, no save</button>' +
-        '</div>' +
-        '<div class="vi-save-help"><b>Real vi/vim:</b> <code>Esc</code> returns to Normal mode. Then <code>:w</code> + Enter saves, <code>:wq</code> + Enter saves and quits, and <code>ZZ</code> (capital Z twice, i.e. Shift+Z twice) saves and quits. <b>Shift+Esc is not the save shortcut.</b></div>' +
-      '</div>' +
       '<div class="vi-giveup"><button class="giveup-btn" onclick="viGiveUp()">Give up on this question</button></div>' +
     '</div>';
 
@@ -10416,12 +9809,6 @@ function renderViUI(){
     const el = document.getElementById('viCmdInput');
     el.focus();
     el.addEventListener('keydown', viCmdInputKey);
-  } else {
-    const root = document.getElementById('viEditorRoot');
-    if(root){
-      root.focus({preventScroll:true});
-      root.addEventListener('keydown', viNormalShortcutKey);
-    }
   }
 }
 
@@ -10456,62 +9843,7 @@ function viCmd(key){
   // Esc in normal mode is a no-op, same as real vi
 }
 
-
-let viPendingZ = false;
-
-function viQuickCommand(c){
-  if(!viState) return;
-  // These buttons represent the real Normal-mode save/quit sequences.
-  if(c === 'ZZ'){
-    const q = viState.question;
-    gradeVi(q.viCheck(viState.buffer.slice()));
-    return;
-  }
-  if(c === 'ZQ'){
-    exitViNoSave();
-    return;
-  }
-  runViCommand(c);
-}
-
-function viNormalShortcutKey(e){
-  if(!viState || viState.mode !== 'normal') return;
-
-  if(e.key === 'Escape'){
-    e.preventDefault();
-    viPendingZ = false;
-    return;
-  }
-
-  // In real vi/vim, ZZ = save and quit, ZQ = quit without saving.
-  if(e.key === 'Z'){
-    e.preventDefault();
-    if(viPendingZ){
-      viPendingZ = false;
-      viQuickCommand('ZZ');
-    } else {
-      viPendingZ = true;
-      setTimeout(()=>{ viPendingZ = false; }, 1200);
-    }
-    return;
-  }
-
-  if(viPendingZ && e.key === 'Q'){
-    e.preventDefault();
-    viPendingZ = false;
-    viQuickCommand('ZQ');
-    return;
-  }
-
-  viPendingZ = false;
-}
-
 function viLineInputKey(e){
-  if(e.key === 'Tab'){
-    e.preventDefault();
-    if(e.shiftKey) outdentEditor('viLineInput'); else indentEditor('viLineInput');
-    return;
-  }
   if(e.key === 'Enter'){
     e.preventDefault();
     const el = document.getElementById('viLineInput');
@@ -10700,7 +10032,7 @@ async function saveNotes(){
   try{
     localStorage.setItem('linux-devops-notes', notesArea.value);
     refreshQuestionBank(notesArea.value);
-    msg.textContent = '✓ saved + quiz refreshed (' + ALL_CATS.length + ' topics, ' + autoQuestionCount + ' auto MCQs)';
+    msg.textContent = '✓ saved + question pool rebuilt (' + autoQuestionCount + ' notes-derived questions)';
     msg.classList.add('show');
     setTimeout(()=>msg.classList.remove('show'), 2200);
   }catch(e){
@@ -10737,7 +10069,7 @@ async function handleDocxUpload(evt){
     }
     notesArea.value = text;
     await saveNotes();
-    statusEl.textContent = '✓ Notes + quiz refreshed from ' + file.name + ' (' + new Date().toLocaleDateString() + '). Detected ' + ALL_CATS.length + ' selectable topics and added ' + autoQuestionCount + ' notes-derived MCQs.';
+    statusEl.textContent = '✓ Notes + question pool rebuilt from ' + file.name + ' (' + new Date().toLocaleDateString() + '). Added ' + autoQuestionCount + ' notes-derived mixed questions; curated questions remain available.';
   }catch(e){
     statusEl.textContent = '⚠ Could not read that file — try re-saving it from Word and uploading again.';
   }
