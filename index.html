@@ -9036,114 +9036,158 @@ function makePythonCheck(expected){
 }
 
 function isNoiseLine(line){
-  return !line || /^(copy|output:?|example:?|examples:?|syntax:?|time complexity:?|summary:?|key takeaways:?|interview questions:?|common interview questions:?|table of contents:?|difference:?|uses:?|common mistakes:?)$/i.test(line);
+  return !line || /^(copy|output:?|example:?|examples:?|syntax:?|time complexity:?|summary:?|key takeaways:?|interview questions:?|common interview questions:?|table of contents:?|difference:?|uses:?|common mistakes:?|assignments?)$/i.test(line.trim());
 }
-function cleanQuestionLabel(q){
-  return q.replace(/^Q\s*\d+\s*[.)-]?\s*/i,'').trim();
-}
-function nextUsefulLine(lines, from){
-  for(let i=from;i<lines.length;i++){
-    const x=lines[i];
-    if(!isNoiseLine(x)) return {line:x,index:i};
-  }
-  return null;
-}
-function shortTopicLabel(line){
-  let x=line.replace(/^\d+\.\s*/,'').trim();
-  if(x.length>70) return null;
-  if(/[.!?]$/.test(x) && !/\?$/.test(x)) return null;
-  return x;
-}
+function cleanQuestionLabel(q){ return q.replace(/^Q\s*\d*\s*[.:)-]?\s*/i,'').trim(); }
 function normalizedAnswerKey(s){ return normalize(String(s).replace(/[.`'\"]/g,'')); }
 
-function pickDistractors(correct, candidates, salt){
-  const ck=normalizedAnswerKey(correct);
-  const pool=[];
-  const used=new Set([ck]);
-  for(const c of shuffleCopy(candidates,salt)){
-    const text=String(c||'').trim();
-    const k=normalizedAnswerKey(text);
-    if(!text || text.length>180 || used.has(k)) continue;
-    // Avoid answers that are effectively the same phrase.
-    if(k.includes(ck) || ck.includes(k)) continue;
-    used.add(k); pool.push(text);
-    if(pool.length===3) break;
-  }
-  return pool.length===3 ? pool : [];
+function meaningfulWords(text){
+  const stop=new Set('the a an and or but if then else is are was were be been being to of in on for from with by as at it its this that these those do does did what which how why when where who can could should would will may might into out your you we they he she their our not no'.split(' '));
+  return normalize(String(text).replace(/[^a-zA-Z0-9_+./-]+/g,' ')).split(' ').filter(w=>w.length>2 && !stop.has(w));
 }
-
-function makeMcq(cat, question, answer, answerPool, salt, explainLabel){
-  const distractors=pickDistractors(answer,answerPool,salt);
-  if(distractors.length<3) return null;
-  const opts=shuffleCopy([answer,...distractors],salt+'|opts');
-  const ids=['a','b','c','d'];
+function makeFlexibleTextCheck(expected){
+  const keys=[...new Set(meaningfulWords(expected))];
+  const exact=normalize(expected);
+  return n => {
+    const got=normalize(n);
+    if(!got) return false;
+    if(got===exact || got.includes(exact) || exact.includes(got) && got.length>=8) return true;
+    if(keys.length===0) return false;
+    const matched=keys.filter(k=>got.includes(k)).length;
+    const need = keys.length<=2 ? keys.length : Math.max(2, Math.ceil(keys.length*0.55));
+    return matched>=need;
+  };
+}
+function makeShortQuestion(cat, question, answer, explainLabel){
   return {
-    cat,pts:10,type:'mcq',auto:true,
-    scenario:question,
-    options:opts.map((t,i)=>({id:ids[i],text:t})),
-    correctId:ids[opts.indexOf(answer)],
-    hints:['Recall the exact concept from your notes, then eliminate answers that belong to a different concept.','Focus on what the question is specifically asking: definition, purpose, syntax, behavior, or result.'],
-    sample:answer,
+    cat,pts:12,type:'short',auto:true,scenario:question,
+    hints:['Answer the idea in your own words; exact wording is not required.','Include the key purpose, behavior, command, or distinction emphasized in the notes.'],
+    sample:answer,check:makeFlexibleTextCheck(answer),
     explain:'<b>'+escapeHtml(explainLabel || 'From your uploaded notes:')+'</b> '+escapeHtml(answer)
   };
 }
+function makeCommandRecall(cat, command, description){
+  const cleanDesc=description.replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim();
+  return {
+    cat,pts:12,type:'command',auto:true,
+    scenario:'You need to '+cleanDesc.replace(/^to\s+/i,'').replace(/[.]$/,'')+'. Which command from your notes would you run?',
+    hints:['Identify the task first, then recall the Linux command or command+flag that performs it.','Use the same command form shown in your notes; sudo is accepted when it does not change the operation.'],
+    sample:command,check:n=>normalize(stripSudo(n))===normalize(stripSudo(command)),
+    explain:'<b>Command from your notes:</b> '+escapeHtml(command)+' — '+escapeHtml(cleanDesc)
+  };
+}
+function isGoodHeading(line){
+  const x=line.trim().replace(/\*+/g,'');
+  if(x.length<3 || x.length>72) return false;
+  if(/^[-–—+*=<>/\\$#@!%&|()[\]{}0-9]/.test(x)) return false;
+  if(/\b(copy|output|example|syntax|summary|assignment|table of contents)\b/i.test(x)) return false;
+  if(/[?]$/.test(x)) return false;
+  const words=x.split(/\s+/);
+  if(words.length>10) return false;
+  return /[A-Za-z]{3}/.test(x);
+}
+function looksLikeRealCommandHeading(line){
+  const x=line.trim().replace(/\s+Copy$/i,'');
+  if(x.length>80 || !/^[a-z]/.test(x)) return false;
+  return /^(?:sudo\s+)?(?:pwd|ls(?:\s+-[A-Za-z]+)?|cd(?:\s+\S+)?|mkdir(?:\s+-[A-Za-z]+)?|tree(?:\s+-[A-Za-z]+(?:\s+\d+)?)?|touch|cp(?:\s+-[A-Za-z]+)?|rm(?:\s+-[A-Za-z]+)?|mv|lscpu|nproc(?:\s+--all)?|free(?:\s+-[hmg])?|cat\s+\/proc\/(?:cpuinfo|meminfo)|top|htop|ps\s+-ef|kill(?:\s+-9)?|jobs(?:\s+-[lprs])?|fg|bg|nohup|df(?:\s+-[hi])?|du(?:\s+[^ ]+)?|lsblk(?:\s+-f)?|find|grep|sed|awk|wc|chmod|chown|useradd|usermod|groupadd|passwd|export|ssh|scp|tar|curl|wget|systemctl|journalctl|docker|git)(?:\s+.*)?$/i.test(x);
+}
+function inferLearningCat(text,current){
+  const l=String(text).toLowerCase();
+  if(/cache|redis|memcached|queue|rabbitmq|kafka|sqs|celery/.test(l)) return 'Caching & Queueing';
+  if(/cpu|ram|memory|storage|disk|lscpu|nproc|free\b|nvme|ssd|hdd|inode|ebs|filesystem|lsblk|mount/.test(l)) return 'CPU, RAM & Storage';
+  if(/process|signal|sigterm|sigkill|jobs\b|\bfg\b|\bbg\b|nohup|ps -ef|kill/.test(l)) return 'Processes & Jobs';
+  if(/useradd|usermod|groupadd|chmod|chown|permission|owner|group|uid|gid/.test(l)) return 'Users, Groups & Permissions';
+  if(/find\b|grep|sed|awk|\bvi\b|vim|text processing|redirection|\/dev\/null/.test(l)) return 'Text Processing & Editing';
+  if(/bash|shell|shebang|\[\[|case\b|for loop|while loop|positional|exit status|\$@|\$\*/.test(l)) return 'Bash Scripting';
+  if(/python|\bdef\b|function|list|tuple|dictionary|set\b|string|decorator|scope|closure|exception|boto3|requests|json|operator|conditional/.test(l)) return 'Python';
+  if(/aws|ec2|cloud|ami|ssh|virtual machine|bare metal/.test(l)) return 'Cloud, EC2 & Linux Basics';
+  if(/linux|directory|file|pwd|\bls\b|mkdir|touch|cp\b|rm\b|mv\b/.test(l)) return 'Linux Commands';
+  return current || 'Notes Review';
+}
 
 function buildAutoQuestions(text){
-  // Conservative fallback for a newly uploaded DOCX. Quality beats quantity:
-  // only create questions when the source has a clear Q&A, definition, or command example.
-  const lines=text.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').trim()).filter(Boolean);
+  // High-signal parser: creates questions only from explicit Q&A, named concepts with
+  // real explanatory text, and command-purpose pairs. Fragments/flags are never topics.
+  const lines=text.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').replace(/\s+Copy$/i,'').trim()).filter(Boolean);
   const generated=[]; const seen=new Set();
-  const answersByCat={};
   let currentCat='Notes Review';
+  const add=q=>{ if(!q) return; const k=normalize(q.scenario)+'|'+normalize(q.sample||''); if(!seen.has(k)){seen.add(k);generated.push(q);} };
 
-  function safeCat(line){
-    const l=line.toLowerCase();
-    if(/python|\bdef\b|list|tuple|dictionary|decorator|boto3|requests|json/.test(l)) return 'Python';
-    if(/bash|shell|\[\[|\$@|\$\*|for loop|while loop|case\b/.test(l)) return 'Bash Scripting';
-    if(/chmod|chown|useradd|usermod|permission|group/.test(l)) return 'Users, Groups & Permissions';
-    if(/cpu|ram|memory|disk|storage|lscpu|nproc|free -h/.test(l)) return 'CPU, RAM & Storage';
-    return currentCat;
-  }
-  const candidates=[];
   for(let i=0;i<lines.length;i++){
-    const line=lines[i].replace(/\s+Copy$/i,'').trim();
-    if(!line) continue;
-    if(line.length<80 && !/[.!?]$/.test(line)) currentCat=safeCat(line);
+    const line=lines[i];
+    if(isNoiseLine(line)) continue;
+    currentCat=inferLearningCat(line,currentCat);
 
-    // Explicit Q&A: Q: question? answer OR question line followed by answer.
-    let m=line.match(/^Q(?::|\d+[.)]?)\s*(.+?\?)\s*(.+)$/i);
-    if(m){ candidates.push({cat:safeCat(line),question:m[1],answer:m[2]}); continue; }
-    m=line.match(/^Q\d+[.)]?\s*(.+\?)$/i);
-    if(m && lines[i+1]){
-      const a=lines[i+1].replace(/\s+Copy$/i,'').trim();
-      if(a && !/\?$/.test(a) && a.length<220) candidates.push({cat:safeCat(line),question:m[1],answer:a});
+    // Explicit interview Q&A on one line: Q: ...? answer
+    let m=line.match(/^Q(?:\d+)?[.:)]?\s*(.+?\?)\s+(.+)$/i);
+    if(m){
+      const question=cleanQuestionLabel(m[1]); const answer=m[2].trim();
+      if(answer.length>=2 && answer.length<=360) add(makeShortQuestion(inferLearningCat(question+' '+answer,currentCat),question,answer,'Answer from your notes:'));
+      continue;
+    }
+    // Explicit question line followed by answer line.
+    m=line.match(/^Q(?:\d+)?[.:)]?\s*(.+\?)$/i);
+    if(m){
+      for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+        const a=lines[j];
+        if(isNoiseLine(a)) continue;
+        if(!/\?$/.test(a) && a.length<=360 && !looksLikePythonCode(a)){
+          add(makeShortQuestion(inferLearningCat(m[1]+' '+a,currentCat),cleanQuestionLabel(m[1]),a,'Answer from your notes:'));
+        }
+        break;
+      }
       continue;
     }
 
-    // Short concept heading + a real explanatory sentence.
-    if(line.length<=70 && !/[.!?]$/.test(line) && lines[i+1]){
-      const a=lines[i+1].replace(/^[-•]+\s*/,'').replace(/\s+Copy$/i,'').trim();
-      if(a.length>=18 && a.length<=220 && /[.!)]$/.test(a) && !looksLikePythonCode(a) && !looksLikeShellCommand(a)){
-        const cat=safeCat(line);
-        const q=/\(\)$/.test(line) ? `What does ${line} do?` : `Which description best matches “${line}”?`;
-        candidates.push({cat,question:q,answer:a});
+    // Command heading + purpose/definition immediately after it.
+    if(looksLikeRealCommandHeading(line)){
+      const cmd=line;
+      for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+        const a=lines[j].replace(/^[-•]+\s*/,'').trim();
+        if(isNoiseLine(a)) continue;
+        if(a.length>=15 && a.length<=280 && !looksLikeShellCommand(a) && !looksLikePythonCode(a)){
+          add(makeCommandRecall(inferLearningCat(cmd+' '+a,currentCat),cmd,a));
+        }
+        break;
+      }
+      continue;
+    }
+
+    // Named concept + explanatory sentence. Ask directly, never as a vague MCQ.
+    if(isGoodHeading(line)){
+      let answer=null;
+      for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+        const a=lines[j].replace(/^[-•]+\s*/,'').trim();
+        if(isNoiseLine(a)) continue;
+        if(a.length>=18 && a.length<=320 && !looksLikeShellCommand(a) && !looksLikePythonCode(a) && !/^\d+[.)]/.test(a)) answer=a;
+        break;
+      }
+      if(answer){
+        const heading=line.replace(/\*+/g,'').replace(/^\d+[.)]\s*/,'').trim();
+        const cat=inferLearningCat(heading+' '+answer,currentCat);
+        let question;
+        if(/^(what is|why |how |difference |when |which )/i.test(heading)) question=heading.replace(/\?*$/,'?');
+        else if(/\b(command|operator|method|function|statement|keyword|signal|flag)\b/i.test(heading)) question='What does '+heading+' do or mean?';
+        else question='Explain '+heading+' in your own words.';
+        add(makeShortQuestion(cat,question,answer,'Key point from your notes:'));
       }
     }
   }
-  for(const c of candidates) (answersByCat[c.cat] ||= []).push(c.answer);
-  for(const c of candidates){
-    const key=normalize(c.question)+'|'+normalize(c.answer); if(seen.has(key)) continue; seen.add(key);
-    const pool=(answersByCat[c.cat]||[]).filter(x=>normalize(x)!==normalize(c.answer));
-    const q=makeMcq(c.cat,c.question,c.answer,pool,'fallback|'+c.question,'From the uploaded notes:');
-    if(q) generated.push(q);
+
+  // Retain only the genuinely explicit coding exercises that were curated from the bundled notes.
+  if(typeof CURATED_NOTE_QUESTIONS!=='undefined'){
+    CURATED_NOTE_QUESTIONS.forEach(q=>{
+      if(q.type==='python' && /^Coding Interview Problem\b/.test(q.scenario)) add(q);
+      if(q.type==='bash' && /^(?:Practice the Bash example \*\*(?:Infinite loop|Looping over command output|Basic example|Script:))/i.test(q.scenario)) add(q);
+    });
   }
-  return shuffleCopy(generated,'fallback-pool');
+  return shuffleCopy(generated,'quality-pool|'+Date.now());
 }
 
 function refreshQuestionBank(text, regenerate=true){
   if(regenerate) sessionGenerationSeed = Date.now() ^ Math.floor(Math.random()*0x7fffffff);
   const isBundledNotes = hashText(text) === ORIGINAL_NOTES_FINGERPRINT;
-  const generated = isBundledNotes ? CURATED_NOTE_QUESTIONS.slice() : buildAutoQuestions(text);
+  const generated = buildAutoQuestions(text);
   // Shuffle on every open/refresh so a 32-question run is sampled from a much larger pool.
   const shuffledGenerated = shuffleCopy(generated, 'open-refresh|' + Date.now());
   QUESTIONS.splice(0,QUESTIONS.length,...BASE_QUESTIONS,...shuffledGenerated);
@@ -9365,7 +9409,8 @@ function renderQuestion(){
   const q = QUESTIONS[order[qIndex]];
   const isCode = (q.type === 'bash' || q.type === 'python');
   const isMcq = q.type === 'mcq';
-  termTitle.textContent = q.type === 'python' ? 'python3 — code challenge — 80x24' : (q.type === 'bash' ? 'bash — script challenge — 80x24' : (isMcq ? 'quiz — concept check — 80x24' : 'bash — ops-drill — 80x24'));
+  const isShort = q.type === 'short';
+  termTitle.textContent = q.type === 'python' ? 'python3 — code challenge — 80x24' : (q.type === 'bash' ? 'bash — script challenge — 80x24' : (isMcq ? 'quiz — concept check — 80x24' : (isShort ? 'study — short answer — 80x24' : 'bash — ops-drill — 80x24')));
   statQNum.textContent = (qIndex+1) + ' / ' + order.length;
   progressFill.style.width = ((qIndex)/order.length*100) + '%';
 
@@ -9378,14 +9423,14 @@ function renderQuestion(){
       '<div class="mcq-giveup-row"><button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button></div>';
   } else {
     const codeNoun = q.type === 'python' ? 'code' : 'script';
-    const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : 'deploy@prod:~$');
+    const promptLabel = q.type === 'python' ? '>>> python3 challenge.py' : (q.type === 'bash' ? "deploy@prod:~$ cat > script.sh <<'EOF'" : (isShort ? 'answer>' : 'deploy@prod:~$'));
     interactionHtml =
       (isCode ? '<div class="bash-hint">Write the ' + codeNoun + ' below (multiple lines OK). Press Ctrl+Enter (⌘+Enter on Mac) or tap "Run ' + codeNoun + '" to submit.</div>' : '') +
       '<div class="prompt-line' + (isCode ? ' bash-prompt-line' : '') + '">' +
         '<span class="prompt">' + promptLabel + '</span>' +
         (isCode
           ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>'
-          : '<input type="text" id="cmdInput" class="cmd-input" placeholder="type the command…" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
+          : '<input type="text" id="cmdInput" class="cmd-input" placeholder="' + (isShort ? 'answer in your own words…' : 'type the command…') + '" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
         '<div class="btn-group">' +
           '<button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button>' +
           '<button class="go-btn" id="submitBtn" onclick="submitAnswer()">' + (isCode ? 'Run ' + codeNoun + ' ▸' : 'Run ▸') + '</button>' +
@@ -9494,7 +9539,7 @@ function submitAnswer(){
   const pass = q.check(n);
   const outputArea = document.getElementById('outputArea');
   const feedbackArea = document.getElementById('feedbackArea');
-  const acceptedLabel = q.type === 'python' ? 'code accepted' : q.type === 'bash' ? 'script accepted' : 'command accepted';
+  const acceptedLabel = q.type === 'python' ? 'code accepted' : q.type === 'bash' ? 'script accepted' : q.type === 'short' ? 'answer accepted' : 'command accepted';
 
   if(pass){
     if(q.type === 'vi'){
