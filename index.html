@@ -9249,12 +9249,75 @@ function commandToken(line){
   return {cmd, rest, first};
 }
 
+function canonicalCommandQuestion(cmdRaw){
+  const n = normalize(cmdRaw);
+  const first = firstWord(n);
+
+  // Only generate questions we can phrase cleanly and grade reliably.
+  // These deliberately mirror the scenario-driven style of the original quiz.
+  const exact = [
+    {re:/^pwd$/, cat:'Navigation & Files', scenario:'You have just opened a Linux terminal and want to confirm your current working directory. What command would you run?', sample:'pwd'},
+    {re:/^ls\s+-l$/, cat:'Navigation & Files', scenario:'List the files in the current directory in long format so you can see details such as permissions and ownership.', sample:'ls -l'},
+    {re:/^ls\s+-t$/, cat:'Navigation & Files', scenario:'List files sorted by modification time, with the most recently modified entries first.', sample:'ls -t'},
+    {re:/^ls\s+-r$/, cat:'Navigation & Files', scenario:'List directory contents in reverse order.', sample:'ls -r'},
+    {re:/^ls\s+-lrt$|^ls\s+-rtl$|^ls\s+-trl$/, cat:'Navigation & Files', scenario:'Show a long listing sorted by time in reverse order so the newest entry appears at the bottom.', sample:'ls -lrt'},
+    {re:/^tree\s+-d$/, cat:'Navigation & Files', scenario:'Display only directories in a tree-style view.', sample:'tree -d'},
+    {re:/^tree\s+-a$/, cat:'Navigation & Files', scenario:'Display a tree that also includes hidden files.', sample:'tree -a'},
+    {re:/^tree\s+-l\s*2$/, cat:'Navigation & Files', scenario:'Display a directory tree limited to two levels of depth.', sample:'tree -L 2'},
+    {re:/^tree\s+-f$/, cat:'Navigation & Files', scenario:'Display a tree with the full path prefix for each file.', sample:'tree -f'},
+    {re:/^tree\s+-h$/, cat:'Navigation & Files', scenario:'Display a directory tree with human-readable file sizes.', sample:'tree -h'},
+    {re:/^lscpu$/, cat:'CPU, Memory & Disk', scenario:'You want a clean, human-readable summary of CPU architecture and virtualization details on a Linux server. What command would you run?', sample:'lscpu'},
+    {re:/^nproc$/, cat:'CPU, Memory & Disk', scenario:'You only need the number of usable processing units (vCPUs) on the Linux machine. What command would you run?', sample:'nproc'},
+    {re:/^free\s+-h$/, cat:'CPU, Memory & Disk', scenario:'Check RAM and swap usage in human-readable units. What command would you run?', sample:'free -h'},
+    {re:/^ps\s+-ef$/, cat:'Process Management', scenario:'Display a full-format listing of every running process on the system.', sample:'ps -ef'},
+    {re:/^jobs\s+-p$/, cat:'Process Management', scenario:'You want only the PIDs of jobs tracked by your current shell. What command would you run?', sample:'jobs -p'},
+    {re:/^jobs\s+-l$/, cat:'Process Management', scenario:'List shell jobs and include each job\'s PID.', sample:'jobs -l'},
+    {re:/^jobs\s+-r$/, cat:'Process Management', scenario:'Show only currently running jobs from the current shell\'s job table.', sample:'jobs -r'},
+    {re:/^jobs\s+-s$/, cat:'Process Management', scenario:'Show only stopped jobs from the current shell\'s job table.', sample:'jobs -s'},
+    {re:/^cat\s+\/proc\/cpuinfo$/, cat:'CPU, Memory & Disk', scenario:'View the raw per-CPU information exposed by the Linux kernel.', sample:'cat /proc/cpuinfo'},
+    {re:/^cat\s+\/proc\/meminfo$/, cat:'CPU, Memory & Disk', scenario:'View the detailed raw memory statistics exposed by the Linux kernel.', sample:'cat /proc/meminfo'}
+  ];
+  for(const q of exact){ if(q.re.test(n)) return q; }
+
+  // Base commands: generate one clean recall question, never paste raw note text.
+  const base = {
+    cd:['Navigation & Files','You need to change from the current directory to another directory. Which Linux command is used?','cd'],
+    mkdir:['Navigation & Files','You need to create a new directory from the terminal. Which Linux command is used?','mkdir'],
+    touch:['Navigation & Files','You need to create an empty file or update a file timestamp. Which Linux command is used?','touch'],
+    cp:['Navigation & Files','You need to copy a file or directory from one location to another. Which Linux command is used?','cp'],
+    rm:['Navigation & Files','You need to remove a file from the command line. Which Linux command is used?','rm'],
+    mv:['Navigation & Files','You need to move or rename a file or directory. Which Linux command is used?','mv'],
+    top:['Process Management','You want a live view of running processes and resource usage. Which Linux command is commonly used?','top'],
+    htop:['Process Management','You want an interactive, easier-to-navigate alternative to top. Which command would you use?','htop'],
+    kill:['Process Management','You need to send a termination signal to a process by PID. Which command is used?','kill'],
+    fg:['Process Management','A shell job is stopped or running in the background and you want to bring the same process back to the foreground. Which command is used?','fg'],
+    bg:['Process Management','You stopped a foreground job with Ctrl+Z and want to resume that same job in the background. Which command is used?','bg'],
+    grep:['Text Processing','You need to search text for matching lines or patterns. Which Linux command is used?','grep'],
+    find:['Text Processing','You need to search the filesystem for files or directories matching conditions. Which command is used?','find'],
+    chmod:['Users & Permissions','You need to change file or directory permissions. Which Linux command is used?','chmod'],
+    chown:['Users & Permissions','You need to change the owner or group of a file or directory. Which Linux command is used?','chown'],
+    useradd:['Users & Permissions','You are scripting Linux account creation and need the low-level command for creating a user. Which command is used?','useradd'],
+    usermod:['Users & Permissions','You need to modify an existing Linux user account. Which command is used?','usermod'],
+    groupadd:['Users & Permissions','You need to create a new Linux group. Which command is used?','groupadd'],
+    export:['Shell Environment','You need to make a shell variable available to child processes in the current session. Which command is used?','export'],
+    ssh:['Networking & Remote Access','You need to open a secure remote shell session to another machine. Which command is used?','ssh'],
+    scp:['Networking & Remote Access','You need to securely copy a file between machines over SSH. Which command is used?','scp'],
+    systemctl:['Services & Logs','You need to manage a systemd service. Which command is used?','systemctl'],
+    journalctl:['Services & Logs','You need to inspect logs collected by systemd-journald. Which command is used?','journalctl'],
+    tar:['Archives & Compression','You need to create or extract a tar archive. Which command is used?','tar'],
+    curl:['Networking & Remote Access','You need to make an HTTP request or transfer data from a URL from the command line. Which command is commonly used?','curl'],
+    wget:['Networking & Remote Access','You need to download a file from a URL from the command line. Which command is commonly used?','wget']
+  };
+  if(base[first]){ const [cat,scenario,sample]=base[first]; return {cat,scenario,sample}; }
+  return null;
+}
+
 function buildAutoQuestions(text){
   const lines=String(text||'').split(/\r?\n/).map(cleanNoteLine);
   const generated=[]; const seen=new Set();
   let currentCat='Notes Review';
 
-  // PASS 1: explicit Q&A. These are the safest notes-derived questions.
+  // PASS 1 — explicit interview Q&A only. Keep the question wording from the notes.
   for(let i=0;i<lines.length;i++){
     const line=lines[i]; if(!line) continue;
     if(isLikelyHeading(line)) currentCat=classifyTopic(line,currentCat);
@@ -9270,13 +9333,13 @@ function buildAutoQuestions(text){
       }
       answer=acc.join(' ').trim();
     }
-    if(isJunkAnswer(answer) || answer.length<5) continue;
+    if(isJunkAnswer(answer) || answer.length<5 || answer.length>500) continue;
     const cat=classifyTopic(question+' '+answer,currentCat);
     const key='qa|'+question.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
     generated.push(makeShortQuestion(cat,question,answer,'Answer from your notes'));
   }
 
-  // PASS 2: explicit "What is X?" / "What are X?" headings followed by a definition.
+  // PASS 2 — genuine "What is...?" / "What are...?" definitions.
   for(let i=0;i<lines.length;i++){
     const line=lines[i]; if(!line) continue;
     if(!/^(what (?:is|are)\b.+\?|define\b.+\??)$/i.test(line)) continue;
@@ -9285,40 +9348,29 @@ function buildAutoQuestions(text){
       const ln=lines[j];
       if(!ln || /^Q(?:uestion)?\s*[:.)-]?/i.test(ln) || /^(what (?:is|are)\b.+\?|define\b)/i.test(ln) || isLikelyHeading(ln)) break;
       if(!isJunkAnswer(ln)) acc.push(ln);
-      if(acc.join(' ').length>220) break;
+      if(acc.join(' ').length>260) break;
     }
-    const answer=acc.join(' ').trim(); if(isJunkAnswer(answer) || answer.length<12) continue;
+    const answer=acc.join(' ').trim();
+    if(isJunkAnswer(answer) || answer.length<12 || answer.length>360) continue;
     const cat=classifyTopic(line+' '+answer,currentCat);
     const key='def|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
     generated.push(makeShortQuestion(cat,line,answer,'Definition in your notes'));
   }
 
-  // PASS 3: command-purpose relationships. Ask for the command, like the original scenario-driven quiz.
+  // PASS 3 — Linux command recall, but only through curated templates.
+  // Raw prose/table text is NEVER pasted into the question.
   for(let i=0;i<lines.length;i++){
     const line=lines[i]; if(!line) continue;
     const c=commandToken(line); if(!c) continue;
-    // Skip raw command examples with arguments unless the same line contains a human-readable description.
-    let description=c.rest;
-    if(!description){
-      for(let j=i+1;j<Math.min(lines.length,i+3);j++){
-        const ln=lines[j];
-        if(!ln || isLikelyHeading(ln) || commandToken(ln)) break;
-        if(!isJunkAnswer(ln) && /\b(used|shows?|prints?|displays?|lists?|creates?|copies?|moves?|removes?|deletes?|checks?|finds?|changes?|sets?|sends?|resumes?|runs?|stands for)\b/i.test(ln)) { description=ln; break; }
-      }
-    }
-    if(!description || description.length<12 || description.length>240) continue;
-    if(/^[-A-Za-z]\s+--[A-Za-z-]+/.test(description)) continue;
-    const cat=classifyTopic(c.cmd+' '+description,currentCat);
-    const key='cmdpurpose|'+c.cmd.toLowerCase()+'|'+description.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
-    const expected=c.cmd;
-    generated.push({cat,pts:15,type:'command',auto:true,
-      scenario:'You need to '+description.replace(/^\s*(?:is |are |used to |used for )/i,'').replace(/[.]$/,'')+'. What command from your notes would you use?',
-      hints:['Think of the Linux command whose purpose matches this task.','Include the command and any essential flag shown in the notes.'],
-      sample:expected,check:flexibleAnswerCheck(expected),
-      explain:'<b>From your notes:</b> <code>'+escapeHtml(expected)+'</code> — '+escapeHtml(description)});
+    const cq=canonicalCommandQuestion(c.cmd); if(!cq) continue;
+    const key='canonicalcmd|'+cq.sample.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    generated.push({cat:cq.cat,pts:15,type:'command',auto:true,
+      scenario:cq.scenario,
+      hints:['Think about the task first, then recall the Linux command that performs it.','Enter only the command (and any essential flag shown in the task).'],
+      sample:cq.sample, check:flexibleAnswerCheck(cq.sample),
+      explain:'<b>Command:</b> <code>'+escapeHtml(cq.sample)+'</code>'});
   }
 
-  // Limit only duplicates/noise, not the usable pool. Quality beats quantity.
   return shuffleCopy(generated,'high-confidence-pool');
 }
 
