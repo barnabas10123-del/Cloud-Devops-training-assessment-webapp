@@ -354,7 +354,7 @@
       <div class="term-body" id="termBody"></div>
     </div>
 
-    <footer class="foot">Challenges can mix concept MCQs with hands-on Linux commands, Bash scripts, vi tasks, and Python coding. You get 3 attempts per hands-on question with hints, or you can give up and see the answer. Python questions use an indentation-aware multi-line editor with task tests and simulated output. Bash questions can be written directly or edited in the built-in vi simulator. Linux command prompts support Enter, history with ↑/↓, and Ctrl+L to clear feedback.</footer>
+    <footer class="foot">Challenges can mix concept MCQs with hands-on Linux commands, Bash scripts, vi tasks, and Python coding. You get 3 attempts per hands-on question with progressive hints (nudge → stronger clue → practical form), or you can give up and see the answer. Python questions use an indentation-aware multi-line editor with task tests and simulated output. Bash questions can be written directly or edited in the built-in vi simulator. Linux command prompts support Enter, history with ↑/↓, and Ctrl+L to clear feedback.</footer>
   </div>
 
   <div id="notesTab" style="display:none;">
@@ -9130,7 +9130,7 @@ Useful files: /etc/services maps names to port numbers on any Linux host — wor
   Raw output rows, tables/flags, arbitrary code fragments, and neighboring lines
   are NEVER paired together as question/answer material.
 */
-const BASE_QUESTIONS = QUESTIONS.slice();
+const BASE_QUESTIONS = QUESTIONS.filter(q => !q.auto); // discard legacy auto-generated questions embedded in older builds
 let autoQuestionCount = 0;
 let sessionGenerationSeed = Date.now() ^ Math.floor(Math.random()*0x7fffffff);
 
@@ -9240,18 +9240,68 @@ function contextualizeScenario(cat, scenario){
   return lead + q.charAt(0).toLowerCase() + q.slice(1);
 }
 
+function specificHintFor(cat, question, answer){
+  const q=String(question||'').toLowerCase();
+  const a=String(answer||'').toLowerCase();
+  // Only source-faithful, concept-specific hints. If we cannot make a useful
+  // clue without inventing material, return null and the question is skipped.
+  if(/conditional statement/.test(q)) return ['Focus on the True/False decision a program makes before choosing which block runs.','Think about the role of if / elif / else rather than Python syntax details.'];
+  if(/what are loops|what is a loop|loops\?/.test(q)) return ['Think about why you would avoid writing the same block of code again and again.','The key idea is repeated execution until the iteration or condition finishes.'];
+  if(/\bpass\b/.test(q)) return ['This statement is intentionally a placeholder; ask what happens to program flow when Python reaches it.','Compare it with continue and break: this one does not skip or stop the loop.'];
+  if(/\bcontinue\b/.test(q)) return ['Think about only the current loop iteration, not the whole loop.','Ask what happens to the remaining statements in the current iteration.'];
+  if(/\bbreak\b/.test(q)) return ['Think about the entire loop rather than a single iteration.','Compare it with continue: one skips an iteration, the other ends the loop.'];
+  if(/exit\(\)/.test(q)) return ['Think beyond the loop itself: what happens to the whole Python program?','This is stronger than break because execution does not simply continue after the loop.'];
+  if(/indentation/.test(q)) return ['Think about how Python marks which statements belong inside an if, loop, function, or other block.','Unlike languages that use braces, Python uses leading whitespace to define block structure.'];
+  if(/\bnested if\b/.test(q)) return ['Think about checking a second condition only after an outer condition has already been satisfied.','Look for an if statement placed inside another if block.'];
+  if(/\b=\b.*\b==\b|difference between = and ==/.test(q)) return ['One operator assigns a value; the other compares two values.','Think about whether the expression changes a variable or produces True/False.'];
+  if(/boolean|true or false|condition return/.test(q)) return ['A Python condition is evaluated to one of the two Boolean truth values.','Think about the values used by if and while to decide whether their blocks execute.'];
+  if(/cache hit/.test(q)) return ['Think about whether the requested data was already present in the fast cache.','If the application can return the cached copy immediately, which cache outcome occurred?'];
+  if(/cache miss/.test(q)) return ['Think about what happens when the requested data is absent from the fast cache.','The application must go to the slower source before it can cache the result.'];
+  if(/\bcaching\b|what is cache/.test(q)) return ['Focus on avoiding repeated slow work by keeping a reusable copy somewhere faster.','Think about repeated database/API/disk reads and why a faster copy helps.'];
+  if(/\bqueueing\b|what is queue/.test(q)) return ['Focus on work arriving faster than it can be processed and needing to wait safely.','Think about producer → queue → consumer/worker and ordered background processing.'];
+  if(/virtual machine|\bvm\b/.test(q)) return ['Think about one physical host being divided into isolated software-based computers.','Each guest behaves like a separate computer with its own OS while sharing underlying hardware.'];
+  if(/bare metal/.test(q)) return ['Think about running directly on physical hardware without a virtualization layer in between.','Focus on the absence of a hypervisor and resource sharing.'];
+  if(/public cloud/.test(q)) return ['Think of AWS/Azure/GCP infrastructure owned by a provider and rented by customers.','The physical infrastructure is shared, while compute/storage/services are consumed on demand.'];
+  if(/private cloud/.test(q)) return ['Think about cloud-like flexibility with infrastructure dedicated to one organization.','The key distinction is dedicated infrastructure and greater control/compliance.'];
+  if(/server\b/.test(q) && /what is/.test(q)) return ['Focus on what provides services or resources to other computers/clients over a network.','It can be physical, virtual, or a cloud instance such as EC2.'];
+  // If the answer itself contains a crisp contrast, use its non-answer framing.
+  if(/available/.test(a) && /free/.test(a) && /memory|ram/.test(q+a)) return ['In Linux memory troubleshooting, the most useful column is not simply the completely unused RAM.','Remember that buff/cache can be reclaimed when applications need memory.'];
+  return null;
+}
+
+function thirdProgressiveHint(cat, scenario, answer){
+  const q=(scenario||'').toLowerCase();
+  const a=(answer||'').toLowerCase();
+  if(/nested if/.test(q)) return 'Answer shape: explain that one if statement is placed inside another, so the inner condition is checked only within the outer branch.';
+  if(/indentation/.test(q)) return 'Answer shape: mention that indentation defines which statements belong to a Python block such as if, for, while, or def.';
+  if(/difference between = and ==|\b=\b.*\b==\b/.test(q)) return 'Answer shape: one assigns a value to a variable; the other tests whether two values are equal.';
+  if(/\bbreak\b/.test(q)) return 'Answer shape: it exits the current loop immediately; execution continues after the loop.';
+  if(/\bcontinue\b/.test(q)) return 'Answer shape: it skips the rest of the current iteration and moves to the next iteration.';
+  if(/\bpass\b/.test(q)) return 'Answer shape: it is a placeholder statement that performs no action and lets execution continue.';
+  if(/exit\(\)/.test(q)) return 'Answer shape: distinguish it from break — it terminates the Python program rather than only ending a loop.';
+  if(/cache hit/.test(q)) return 'Answer shape: the requested data is already in cache, so it can be returned without fetching from the slower source.';
+  if(/cache miss/.test(q)) return 'Answer shape: the data is absent from cache, so it must be fetched from the source and can then be cached.';
+  if(/\bcaching\b|what is cache/.test(q)) return 'Answer shape: keep a reusable copy of frequently used data in a faster location to avoid repeating slow work.';
+  if(/\bqueueing\b|what is queue/.test(q)) return 'Answer shape: tasks/messages wait in a queue and workers process them later in an orderly way without overwhelming the system.';
+  if(/virtual machine|\bvm\b/.test(q)) return 'Answer shape: a software-based computer runs in isolation while sharing the physical host hardware.';
+  if(/bare metal/.test(q)) return 'Answer shape: the operating system/workload runs directly on physical hardware, with no hypervisor layer.';
+  if(/public cloud/.test(q)) return 'Answer shape: provider-owned shared infrastructure is rented on demand, such as AWS, Azure, or GCP.';
+  if(/private cloud/.test(q)) return 'Answer shape: cloud-style infrastructure is dedicated to one organization for greater control or compliance.';
+  if(/server\b/.test(q) && /what is/.test(q)) return 'Answer shape: a server provides services or resources to other computers/clients over a network.';
+  if(/boolean|true or false|condition return/.test(q)) return "Answer shape: a condition evaluates to one of Python's two Boolean values: True or False.";
+  if(/available/.test(a) && /free/.test(a) && /memory|ram/.test(q+a)) return 'Answer shape: focus on available memory because Linux can reclaim buff/cache when applications need RAM.';
+  return 'Use the key behavior or distinction from the nearby example in your notes; answer the concept directly rather than repeating the heading.';
+}
+
 function makeShortQuestion(cat, scenario, answer, explainPrefix='From your uploaded notes'){
-  const kws=answerKeywords(answer);
   const detailedScenario=contextualizeScenario(cat,scenario);
+  const hints=specificHintFor(cat,detailedScenario,answer);
+  if(!hints) return null;
+  const progressiveHints=[...hints];
+  if(progressiveHints.length < 3) progressiveHints.push(thirdProgressiveHint(cat,detailedScenario,answer));
   return {
     cat, pts:12, type:'short', auto:true, scenario:detailedScenario,
-    hints:[
-      cat==='Python' ? 'Explain what the Python concept does, when it is used, or how it behaves.' :
-      cat==='Bash Scripting' ? 'Think about how this behaves inside a Bash script or shell.' :
-      /Linux|Process|Permissions|Text|CPU|Navigation/.test(cat) ? 'Think about what you would observe or do on an actual Linux server.' :
-      'Answer the idea in your own words; you do not need to reproduce the sentence exactly.',
-      kws.length ? 'Include the important idea represented by: '+kws.slice(0,3).join(', ')+'.' : 'Focus on the main purpose, behavior, or distinction described in the notes.'
-    ],
+    hints:progressiveHints.slice(0,3),
     sample:answer,
     check:flexibleAnswerCheck(answer),
     explain:'<b>'+escapeHtml(explainPrefix)+':</b> '+escapeHtml(answer)
@@ -9334,63 +9384,111 @@ function canonicalCommandQuestion(cmdRaw){
 function buildAutoQuestions(text){
   const lines=String(text||'').split(/\r?\n/).map(cleanNoteLine);
   const generated=[]; const seen=new Set();
-  let currentCat='Notes Review';
 
-  // PASS 1 — explicit interview Q&A only. Keep the question wording from the notes.
+  function add(q,key){
+    if(!q || !key || seen.has(key)) return;
+    seen.add(key); generated.push(q);
+  }
+  function numberedQuestion(line){ return /^\d+[.)]\s*.+\?$/.test(line); }
+  function questionLike(line){ return /\?$/.test(line) || numberedQuestion(line) || /^Q(?:uestion)?\b/i.test(line); }
+
+  // Build a section label for every line. This is recalculated once and then
+  // used by every pass so category state cannot leak from another part of the notes.
+  const sectionAt=[];
+  let section='Notes Review';
   for(let i=0;i<lines.length;i++){
-    const line=lines[i]; if(!line) continue;
-    if(isLikelyHeading(line)) currentCat=classifyTopic(line,currentCat);
-    const qmatch=line.match(/^Q(?:uestion)?\s*[:.)-]?\s*(.+?\?)\s*(.*)$/i);
-    if(!qmatch) continue;
-    const question=qmatch[1].trim(); let answer=qmatch[2].trim();
-    if(!answer){
-      const acc=[];
-      for(let j=i+1;j<Math.min(lines.length,i+5);j++){
-        const ln=lines[j];
-        if(!ln || /^Q(?:uestion)?\s*[:.)-]?/i.test(ln) || isLikelyHeading(ln)) break;
-        if(!isJunkAnswer(ln)) acc.push(ln);
-      }
-      answer=acc.join(' ').trim();
-    }
-    if(isJunkAnswer(answer) || answer.length<5 || answer.length>500) continue;
-    const cat=classifyTopic(question+' '+answer,currentCat);
-    const key='qa|'+question.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
-    generated.push(makeShortQuestion(cat,question,answer,'Answer from your notes'));
+    const line=lines[i];
+    if(line && isLikelyHeading(line) && !/^Interview Questions?$/i.test(line)) section=classifyTopic(line,section);
+    sectionAt[i]=section;
   }
 
-  // PASS 2 — genuine "What is...?" / "What are...?" definitions.
+  // PASS 1 — explicit Q: ... answer relationships only.
+  // A numbered "Interview Questions" list is NOT treated as Q&A because the
+  // notes often list questions without answers (the old generator paired one
+  // question with the next question, causing the exact failure reported).
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i]; if(!line) continue;
+    const m=line.match(/^Q(?:uestion)?\s*[:.)-]?\s*(.+?\?)\s*(.+)$/i);
+    if(!m) continue; // require an inline answer on the same line
+    const question=m[1].trim(), answer=m[2].trim();
+    if(isJunkAnswer(answer) || questionLike(answer) || answer.length<5 || answer.length>500) continue;
+    const cat=classifyTopic(question+' '+answer,sectionAt[i]);
+    add(makeShortQuestion(cat,question,answer,'Answer from your notes'),'qa|'+question.toLowerCase());
+  }
+
+  // PASS 2 — direct definition immediately followed by explanatory prose.
+  // Accept only an unnumbered question and only prose before the next heading,
+  // question, code/example marker, or list item. This keeps question and answer
+  // inside the same local section.
   for(let i=0;i<lines.length;i++){
     const line=lines[i]; if(!line) continue;
     if(!/^(what (?:is|are)\b.+\?|define\b.+\??)$/i.test(line)) continue;
+    if(numberedQuestion(line)) continue;
     const acc=[];
-    for(let j=i+1;j<Math.min(lines.length,i+5);j++){
+    for(let j=i+1;j<Math.min(lines.length,i+4);j++){
       const ln=lines[j];
-      if(!ln || /^Q(?:uestion)?\s*[:.)-]?/i.test(ln) || /^(what (?:is|are)\b.+\?|define\b)/i.test(ln) || isLikelyHeading(ln)) break;
-      if(!isJunkAnswer(ln)) acc.push(ln);
+      if(!ln || questionLike(ln) || isLikelyHeading(ln) || /^\d+[.)]\s/.test(ln) || /^(correct|incorrect|example|examples|syntax|interview questions?)\b/i.test(ln)) break;
+      if(isJunkAnswer(ln) || (typeof looksLikeShellCommand==='function' && looksLikeShellCommand(ln))) break;
+      // Don't treat raw code as prose definitions.
+      if(/^(?:if|elif|else|for|while|def|return|print\(|[A-Za-z_]\w*\s*=)/.test(ln)) break;
+      acc.push(ln);
       if(acc.join(' ').length>260) break;
     }
     const answer=acc.join(' ').trim();
-    if(isJunkAnswer(answer) || answer.length<12 || answer.length>360) continue;
-    const cat=classifyTopic(line+' '+answer,currentCat);
-    const key='def|'+line.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
-    generated.push(makeShortQuestion(cat,line,answer,'Definition in your notes'));
+    if(isJunkAnswer(answer) || questionLike(answer) || answer.length<12 || answer.length>360) continue;
+    const cat=classifyTopic(line+' '+answer,sectionAt[i]);
+    add(makeShortQuestion(cat,line,answer,'Definition in your notes'),'def|'+line.toLowerCase());
   }
 
-  // PASS 3 — Linux command recall, but only through curated templates.
-  // Raw prose/table text is NEVER pasted into the question.
+  // PASS 3 — Linux command recall only through deliberately written templates.
   for(let i=0;i<lines.length;i++){
     const line=lines[i]; if(!line) continue;
     const c=commandToken(line); if(!c) continue;
     const cq=canonicalCommandQuestion(c.cmd); if(!cq) continue;
-    const key='canonicalcmd|'+cq.sample.toLowerCase(); if(seen.has(key)) continue; seen.add(key);
+    const key='canonicalcmd|'+cq.sample.toLowerCase(); if(seen.has(key)) continue;
+    seen.add(key);
+    const firstCmd=firstWord(normalize(cq.sample));
+    const commandHints={
+      pwd:['You are asking the shell where you are right now; no filename or path argument is needed.','Think “print working directory”.'],
+      ls:['This is a directory-listing task; pay attention to whether the scenario asks for long format, time sorting, reverse order, or all three.','The needed letters can be combined after a single dash.'],
+      cd:["This changes the shell's current location rather than listing or creating anything.",'The destination path comes immediately after the command.'],
+      mkdir:['This creates directories; if missing parents are part of the task, the parents option matters.','Think “make directory”.'],
+      tree:['This displays directory structure recursively; the scenario tells you whether to limit depth, show hidden files, directories only, or sizes.','Look for the tree option that matches that display requirement.'],
+      touch:['This can create an empty file without opening an editor.','It also updates timestamps when the file already exists.'],
+      cp:['A copy needs a source and a destination; directories additionally require recursive/archive behavior.','Think “copy SOURCE DESTINATION”.'],
+      rm:['Files can be removed directly; directories require recursive removal.','Check whether the scenario is deleting a file or an entire directory tree.'],
+      mv:['The same command handles both moving and renaming.','Think “source first, destination/new name second”.'],
+      lscpu:['You need the summarized CPU view, not the raw per-CPU kernel file.','This command presents architecture, vCPU and virtualization details in one readable report.'],
+      nproc:['The question asks only for the count of usable processing units.','No parsing of /proc/cpuinfo is necessary.'],
+      free:['Look at RAM and swap rather than filesystem disk usage.','The human-readable form uses the option that prints GiB/MiB-style units.'],
+      ps:['The task is a system-wide process listing in full format.','Think of the two flags that mean every process + full-format columns.'],
+      jobs:['This concerns jobs tracked by the current shell, not every process on the system.','Choose the jobs flag based on whether the task asks for PIDs, long listing, running jobs, or stopped jobs.'],
+      grep:['You are filtering text for matching lines/patterns.','The scenario may require case-insensitive or recursive matching; choose the flag accordingly.'],
+      find:['This searches the filesystem and can filter by properties such as name, age, size, or owner.','Start with the search path, then add the condition requested.'],
+      chmod:['This changes permission bits, not ownership.','Translate the requested read/write/execute access into numeric or symbolic permissions.'],
+      chown:['This changes owner and optionally group.','The usual form is owner:group followed by the path.'],
+      useradd:['This is the low-level account-creation command used in scripts/automation.','Options can create the home directory, choose the shell, UID, groups, and more.'],
+      usermod:['This modifies an existing account.','When adding a supplementary group, remember the append behavior so existing groups are not replaced.'],
+      ssh:['This opens a remote shell over SSH.','Think identity/key option when a PEM key is part of the scenario, then user@host.'],
+      scp:['This copies files over SSH rather than opening an interactive shell.','One side of the copy uses the user@host:path form.'],
+      systemctl:['This manages systemd services.','The action such as status/start/stop/restart comes before the service name.'],
+      journalctl:['This reads systemd journal logs.','The service/unit option is useful when the scenario names a particular service.']
+    };
+    const baseHints=commandHints[firstCmd] || [
+      'Identify exactly what operation the scenario asks the Linux system to perform.',
+      'Recall the command family and the essential option required for this specific task.'
+    ];
+    const hints=[...baseHints];
+    // Match the original quiz's progressive hint style: concept -> stronger clue -> exact form.
+    if(hints.length < 3) hints.push('Try: '+cq.sample);
     generated.push({cat:cq.cat,pts:15,type:'command',auto:true,
       scenario:cq.scenario,
-      hints:['Think about the task first, then recall the Linux command that performs it.','Enter only the command (and any essential flag shown in the task).'],
+      hints:hints.slice(0,3),
       sample:cq.sample, check:flexibleAnswerCheck(cq.sample),
       explain:'<b>Command:</b> <code>'+escapeHtml(cq.sample)+'</code>'});
   }
 
-  return shuffleCopy(generated,'high-confidence-pool');
+  return shuffleCopy(generated,'high-confidence-local-section-pool');
 }
 
 function refreshQuestionBank(text, regenerate=true){
