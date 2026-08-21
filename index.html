@@ -9843,6 +9843,120 @@ function runtimeHtml(runtimeResult){
   return '<div class="sim-output"><div class="sim-head">program output / task tests</div>' + escapeHtml(runtimeResult.text) + '</div>';
 }
 
+
+/* ============================= SMART ANSWER RECOGNIZER ============================= */
+function requestedTechnique(q){
+  const sc=(q.scenario||'').toLowerCase();
+  if(/list comprehension/.test(sc)) return 'list-comprehension';
+  if(/one-line/.test(sc) && q.type==='python') return 'one-line';
+  if(/write a for loop|using a for loop/.test(sc)) return 'for-loop';
+  if(/write a while loop|using a while loop/.test(sc)) return 'while-loop';
+  if(/nested if/.test(sc)) return 'nested-if';
+  if(/try\/?except|try.*except|handle.*valueerror/.test(sc)) return 'try-except';
+  if(/function called|define a function|write a function/.test(sc)) return 'function';
+  return null;
+}
+
+function pythonSemanticAnalysis(q,raw,runtimeResult){
+  const sc=(q.scenario||'').toLowerCase();
+  const flat=normalizePyScript(raw).toLowerCase();
+  const lines=raw.replace(/\r/g,'').split('\n').map(x=>x.trim()).filter(Boolean);
+  const result={logic:false, technique:true, note:''};
+
+  // Even-number filtering: accept equivalent loop+append logic as semantically correct.
+  if(sc.includes('numbers = [1, 2, 3, 4, 5, 6]') && /even/.test(sc)){
+    const hasSource=/\bnumbers\b/.test(flat);
+    const hasEvenTest=/%\s*2\s*==\s*0/.test(flat) || /not\s+\w+\s*%\s*2/.test(flat);
+    const isComp=/\[\s*\w+\s+for\s+\w+\s+in\s+numbers\s+if\s+[^\]]*%\s*2\s*==\s*0\s*\]/i.test(raw);
+    const loopAppend=/for\s+(\w+)\s+in\s+numbers\s*:/i.test(raw) && /\.append\s*\(\s*\w+\s*\)/i.test(raw);
+    result.logic=hasSource && hasEvenTest && (isComp || loopAppend);
+    if(/list comprehension/.test(sc) && !isComp){
+      result.technique=false;
+      result.note='Your logic is correct and produces the even numbers, but this challenge specifically asks you to express the same filtering as a one-line list comprehension.';
+    }
+    return result;
+  }
+
+  // Printing each service: tolerate reasonable variable names and formatting.
+  if(sc.includes('services = ["nginx", "redis", "postgres"]')){
+    const m=raw.match(/for\s+(\w+)\s+in\s+services\s*:/i);
+    if(m){
+      const v=m[1].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      result.logic=new RegExp('print\\s*\\(\\s*'+v+'\\s*\\)','i').test(raw);
+    }
+    return result;
+  }
+
+  // is_even(): accept direct boolean return OR conventional if/else returns.
+  if(sc.includes('function called is_even')){
+    const hasDef=/def\s+is_even\s*\(\s*(\w+)\s*\)\s*:/i.test(raw);
+    const hasEven=/%\s*2\s*==\s*0/.test(flat);
+    const direct=/return\s+\w+\s*%\s*2\s*==\s*0/i.test(raw);
+    const branch=hasEven && /return\s+true/i.test(raw) && /return\s+false/i.test(raw);
+    result.logic=hasDef && (direct || branch);
+    return result;
+  }
+
+  // Dictionary iteration: accept .items() regardless of variable names used in unpacking.
+  if(sc.includes('server_status =')){
+    result.logic=/for\s+\w+\s*,\s*\w+\s+in\s+server_status\.items\s*\(\s*\)\s*:/i.test(raw) && /print\s*\(/i.test(raw);
+    return result;
+  }
+
+  // ValueError task: accept normal try/except arrangements.
+  if(sc.includes('int(user_input)')){
+    result.logic=/try\s*:/i.test(raw) && /int\s*\(\s*user_input\s*\)/i.test(raw) && /except\s+valueerror/i.test(raw) && /invalid number/i.test(raw);
+    return result;
+  }
+
+  // Generic technique awareness for Python questions. q.check remains the authoritative
+  // full-credit test, but this lets us distinguish a sound alternative from wrong logic.
+  const tech=requestedTechnique(q);
+  if(runtimeResult && runtimeResult.ok && !/task-specific output will be tested/i.test(runtimeResult.text||'')){
+    result.logic=true;
+  }
+  if(tech==='list-comprehension' && !/\[[^\]]*\bfor\b[^\]]*\]/s.test(raw)){
+    result.technique=false;
+    result.note='Your code appears to solve the task, but the question specifically asks for a list comprehension.';
+  } else if(tech==='for-loop' && !/\bfor\s+\w+\s+in\b/i.test(raw)){
+    result.technique=false;
+    result.note='Your approach may produce the right result, but this exercise specifically asks you to practise a for loop.';
+  } else if(tech==='while-loop' && !/\bwhile\b/i.test(raw)){
+    result.technique=false;
+    result.note='Your approach may produce the right result, but this exercise specifically asks you to practise a while loop.';
+  } else if(tech==='nested-if'){
+    const ifLines=lines.filter(x=>/^if\b/i.test(x));
+    if(ifLines.length<2){ result.technique=false; result.note='The task specifically asks for a nested if, so one if must appear inside another if block.'; }
+  } else if(tech==='try-except' && !(/\btry\s*:/i.test(raw)&&/\bexcept\b/i.test(raw))){
+    result.technique=false; result.note='The task specifically asks you to practise exception handling with try/except.';
+  } else if(tech==='function' && !/\bdef\s+\w+\s*\(/i.test(raw)){
+    result.technique=false; result.note='The task specifically asks for a function definition, so the solution needs a def statement.';
+  }
+  return result;
+}
+
+function bashSemanticAnalysis(q,raw,runtimeResult){
+  const result={logic:false, technique:true, note:''};
+  // A confirmed task-specific simulator result is evidence of correct behavior.
+  if(runtimeResult && runtimeResult.ok && !/task-specific behavior will be tested/i.test(runtimeResult.text||'')) result.logic=true;
+  return result;
+}
+
+function analyzeSubmission(q,raw,n,runtimeResult,structurePass){
+  if(structurePass && (!runtimeResult || runtimeResult.ok)) return {status:'full', message:''};
+  if(q.type==='python'){
+    const a=pythonSemanticAnalysis(q,raw,runtimeResult);
+    if(a.logic && a.technique) return {status:'full', message:''};
+    if(a.logic && !a.technique) return {status:'technique', message:a.note || 'Your logic and result look correct, but the requested technique has not been used yet.'};
+  }
+  if(q.type==='bash'){
+    const a=bashSemanticAnalysis(q,raw,runtimeResult);
+    if(a.logic && a.technique) return {status:'full', message:''};
+    if(a.logic && !a.technique) return {status:'technique', message:a.note};
+  }
+  return {status:'fail', message:(runtimeResult && !runtimeResult.ok ? runtimeResult.text : 'The result or required logic does not match the task yet.')};
+}
+
 function submitAnswer(){
   if(resolved) return;
   const q = QUESTIONS[order[qIndex]];
@@ -9860,7 +9974,8 @@ function submitAnswer(){
   if(q.type==='python') runtimeResult=pythonSimulation(q,raw);
   else if(q.type==='bash') runtimeResult=bashSimulation(q,raw);
   const structurePass = q.check(n);
-  const pass = structurePass && (!runtimeResult || runtimeResult.ok);
+  const analysis = analyzeSubmission(q,raw,n,runtimeResult,structurePass);
+  const pass = analysis.status === 'full';
   const outputArea = document.getElementById('outputArea');
   const feedbackArea = document.getElementById('feedbackArea');
   const acceptedLabel = q.type === 'python' ? 'code accepted' : q.type === 'bash' ? 'script accepted' : q.type === 'short' ? 'answer accepted' : 'command accepted';
@@ -9883,6 +9998,16 @@ function submitAnswer(){
     return;
   }
 
+  // Correct logic/output but the exercise requested a specific technique.
+  // This is coaching feedback, not a failed attempt: keep the code in the editor so
+  // the learner can refactor it instead of retyping from scratch.
+  if(analysis.status === 'technique'){
+    feedbackArea.innerHTML = '<div class="feedback-line retry" style="border-color:var(--amber-dim); color:var(--amber); background:rgba(255,176,0,0.08);">✓ Logic/output looks correct. ' + escapeHtml(analysis.message) + '</div>';
+    if(hintsShown < q.hints.length) showHint();
+    input.focus();
+    return;
+  }
+
   // wrong answer
   attempts++;
   updatePips();
@@ -9898,7 +10023,7 @@ function submitAnswer(){
       '</div>' +
       '<div class="next-row"><button class="next-btn" onclick="nextQuestion()">' + (qIndex+1 < order.length ? 'Next →' : 'See results →') + '</button></div>';
   } else {
-    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ ' + (runtimeResult && !runtimeResult.ok ? escapeHtml(runtimeResult.text) : 'Logic/task check did not match yet') + ' — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. Try again.</div>';
+    feedbackArea.innerHTML = '<div class="feedback-line retry">✘ ' + (runtimeResult && !runtimeResult.ok ? escapeHtml(runtimeResult.text) : escapeHtml(analysis.message || 'The result or required logic does not match the task yet.')) + ' — attempt ' + attempts + ' of ' + MAX_ATTEMPTS + '. Try again.</div>';
     // auto-reveal the next hint on a wrong attempt
     if(hintsShown < attempts){
       showHint();
