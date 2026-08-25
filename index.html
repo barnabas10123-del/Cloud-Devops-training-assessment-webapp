@@ -323,6 +323,15 @@
   .vi-status{font-family:var(--mono);font-size:11px;color:var(--teal);min-height:18px;margin:4px 0;}
   .vi-shortcuts{font-family:var(--sans-c);font-size:10.5px;color:var(--text-dim);margin:5px 0 9px;line-height:1.5;}
 
+
+  .indent-btn{font-weight:700;}
+  @media (max-width:700px){
+    .editor-toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+    .editor-toolbar .tool-btn{min-height:42px;padding:9px 12px;font-size:13px;touch-action:manipulation;}
+    .editor-toolbar .indent-btn{display:inline-flex;align-items:center;justify-content:center;min-width:94px;}
+    .editor-help{width:100%;font-size:11px;line-height:1.4;margin-top:2px;}
+    .bash-input{min-height:220px;font-size:16px;line-height:1.5;tab-size:4;-moz-tab-size:4;}
+  }
 </style>
 </head>
 <body>
@@ -487,6 +496,44 @@ function handleEditorTab(e){
   const delta=changed.length-selected.length;
   ta.selectionStart=e.shiftKey?Math.max(lineStart,start-Math.min(4,start-lineStart)):start+4;
   ta.selectionEnd=Math.max(ta.selectionStart,end+delta);
+}
+
+
+// Touch-friendly indentation for phone/tablet keyboards that do not expose Tab.
+// With no selection it indents/outdents the current line; with a multi-line
+// selection it applies the operation to every selected line.
+function editorIndentButton(direction){
+  const ta=document.getElementById('cmdInput');
+  if(!ta || ta.tagName!=='TEXTAREA') return;
+  const value=ta.value, start=ta.selectionStart, end=ta.selectionEnd;
+  const lineStart=value.lastIndexOf('\n', Math.max(0,start-1))+1;
+  const nextNl=value.indexOf('\n', end);
+  const blockEnd=nextNl===-1?value.length:nextNl;
+  const selected=value.slice(lineStart,blockEnd);
+  const rows=selected.split('\n');
+  let changed, removedFirst=0;
+  if(direction<0){
+    changed=rows.map((r,idx)=>{
+      let cut=0;
+      if(r.startsWith('    ')) cut=4;
+      else if(r.startsWith('\t')) cut=1;
+      else { const m=r.match(/^ {1,3}/); cut=m?m[0].length:0; }
+      if(idx===0) removedFirst=cut;
+      return r.slice(cut);
+    }).join('\n');
+  } else {
+    changed=rows.map(r=>'    '+r).join('\n');
+  }
+  ta.value=value.slice(0,lineStart)+changed+value.slice(blockEnd);
+  const delta=changed.length-selected.length;
+  if(start===end){
+    const pos=direction<0?Math.max(lineStart,start-removedFirst):start+4;
+    ta.selectionStart=ta.selectionEnd=pos;
+  }else{
+    ta.selectionStart=direction<0?Math.max(lineStart,start-removedFirst):start+4;
+    ta.selectionEnd=Math.max(ta.selectionStart,end+delta);
+  }
+  ta.focus();
 }
 
 let terminalHistory=[];
@@ -9308,6 +9355,248 @@ addPyTask("In Python, user_input = 'abc'. Use try/except to attempt int(user_inp
  s=>/try\s*:/.test(s)&&/int\s*\(\s*user_input\s*\)/.test(s)&&/except\s+valueerror/.test(s)&&/invalid number/.test(s),
  "<b>Exception handling:</b> catch the expected conversion error rather than letting the program crash.");
 
+
+// ---- 40 additional Python coding exercises from Q&A practice screenshots (75 total) ----
+addPyTask("Write a Python program to print exactly `Hello, World!`.",
+ ["Use Python's built-in output function.","The function is print(...).","Try: print(\"Hello, World!\")"],
+ "print(\"Hello, World!\")",
+ s=>/print\s*\(\s*['\"]hello,?\s*world!?['\"]\s*\)/i.test(s),
+ "<b>print()</b> sends text to standard output.");
+
+addPyTask("Write a Python program to add two numbers and print the result. The values may come from variables or user input.",
+ ["Store or read two numeric values.","Use the + operator to calculate their sum.","Print the sum; for input(), convert text to int or float first."],
+ "a = 10\nb = 20\nresult = a + b\nprint(result)",
+ s=>/\+/.test(s)&&/print\s*\(/.test(s),
+ "<b>Addition:</b> obtain two numeric values, add them with +, and display or otherwise use the result.");
+
+addPyTask("Write a Python program to swap two variables without using a third temporary variable.",
+ ["Python can assign more than one variable in a single statement.","Put the old values on the right in the opposite order.","Try: a, b = b, a"],
+ "a, b = b, a",
+ s=>/\b([a-z_]\w*)\s*,\s*([a-z_]\w*)\s*=\s*\2\s*,\s*\1\b/i.test(s),
+ "<b>Tuple unpacking:</b> Python can swap two names directly with <code>a, b = b, a</code>.");
+
+addPyTask("Write a Python program to check whether a number is even or odd and print the result.",
+ ["Use the remainder operator.","An even number leaves remainder 0 when divided by 2.","Use n % 2 == 0 in an if/else."],
+ "n = 7\nif n % 2 == 0:\n    print('Even')\nelse:\n    print('Odd')",
+ s=>/%\s*2\s*==\s*0/.test(s)&&/if\s+/.test(s)&&/else\s*:/.test(s)&&/print\s*\(/.test(s),
+ "<b>Even/odd:</b> test whether the remainder from division by 2 is zero.");
+
+addPyTask("Write a Python program to find the largest of two numbers.",
+ ["You can compare the two values directly.","Either an if/else comparison or max(a, b) is valid.","Return or print whichever value is greater."],
+ "a = 10\nb = 25\nlargest = a if a > b else b\nprint(largest)",
+ s=>(/max\s*\(/.test(s)||(/[<>]/.test(s)&&/if\s+/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Largest of two:</b> compare the values or use Python's max() function.");
+
+addPyTask("Write a Python program to find the largest of three numbers.",
+ ["Compare all three values or use a suitable built-in.","max(a, b, c) is valid; an if/elif/else solution is also valid.","Print or store the greatest value."],
+ "a, b, c = 10, 25, 18\nprint(max(a, b, c))",
+ s=>(/max\s*\([^)]*,[^)]*,/.test(s)||(/if\s+/.test(s)&&(/elif\s+/.test(s)||s.match(/if\s+/g)?.length>=2)))&&/print\s*\(/.test(s),
+ "<b>Largest of three:</b> max() or correct conditional comparisons both solve the task.");
+
+addPyTask("Write a Python program to reverse a string.",
+ ["Python slicing can move through a string backwards.","A slice step of -1 reverses a sequence.","Try: reversed_text = text[::-1]"],
+ "text = 'python'\nreversed_text = text[::-1]\nprint(reversed_text)",
+ s=>(/\[\s*::\s*-1\s*\]/.test(s)||/reversed\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>String reversal:</b> <code>text[::-1]</code> is the concise slicing solution; reversed() is also valid.");
+
+addPyTask("Write a Python program to find the length of a string.",
+ ["Python has a built-in function for the number of items in a sequence.","The same function works for strings, lists, tuples and more.","Try: len(text)"],
+ "text = 'python'\nprint(len(text))",
+ s=>/len\s*\(/.test(s)&&/print\s*\(/.test(s),
+ "<b>len()</b> returns the number of characters in a string.");
+
+addPyTask("Write a Python program to check whether a string is a palindrome.",
+ ["A palindrome is equal to itself when reversed.","Reverse the string, then compare it with the original.","Try comparing text with text[::-1]."],
+ "text = 'level'\nif text == text[::-1]:\n    print('Palindrome')\nelse:\n    print('Not palindrome')",
+ s=>(/\[\s*::\s*-1\s*\]/.test(s)||/reversed\s*\(/.test(s))&&/==/.test(s)&&/print\s*\(/.test(s),
+ "<b>Palindrome:</b> compare the original sequence with its reversed form.");
+
+addPyTask("Write a Python program to find the factorial of a number.",
+ ["Factorial n! is the product 1 × 2 × ... × n.","A loop, recursion, or math.factorial() can be correct.","For a loop, initialize result = 1 and multiply through range(1, n + 1)."],
+ "n = 5\nresult = 1\nfor i in range(1, n + 1):\n    result *= i\nprint(result)",
+ s=>(/math\.factorial\s*\(/.test(s)||(/for\s+/.test(s)&&(/\*=/.test(s)||/=\s*\w+\s*\*/.test(s)))||(/def\s+\w+/.test(s)&&/return/.test(s)&&/\w+\s*\(\s*\w+\s*-\s*1\s*\)/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Factorial:</b> multiply all integers from 1 through n; iterative, recursive and library approaches are valid.");
+
+addPyTask("Write a Python program to print the numbers from 1 to 10 using a loop.",
+ ["Use a for loop with range().","Remember that range's stop value is excluded.","Try: for i in range(1, 11):"],
+ "for i in range(1, 11):\n    print(i)",
+ s=>/for\s+\w+\s+in\s+range\s*\(\s*1\s*,\s*11\s*\)\s*:/.test(s)&&/print\s*\(/.test(s),
+ "<b>range(1, 11)</b> generates 1 through 10 because the stop value is exclusive.");
+
+addPyTask("Write a Python program to find the sum of the numbers from 1 to 10.",
+ ["You can accumulate values in a loop or use sum().","range(1, 11) supplies the numbers 1 through 10.","Examples: sum(range(1, 11)) or total += i inside a loop."],
+ "total = sum(range(1, 11))\nprint(total)",
+ s=>(/sum\s*\(\s*range\s*\(\s*1\s*,\s*11\s*\)/.test(s)||(/for\s+/.test(s)&&(/\+=/.test(s)||/=\s*\w+\s*\+/.test(s))))&&/print\s*\(/.test(s),
+ "<b>Summation:</b> sum(range(1, 11)) or an accumulator loop both produce 55.");
+
+addPyTask("Write a Python program to count the number of vowels in a string.",
+ ["Check each character against the vowel characters.","Loop through the string and test membership in 'aeiouAEIOU'.","Increase a counter whenever the condition is true."],
+ "text = 'Automation'\ncount = 0\nfor ch in text:\n    if ch in 'aeiouAEIOU':\n        count += 1\nprint(count)",
+ s=>/for\s+\w+\s+in\s+\w+\s*:/.test(s)&&/in\s+['\"][^'\"]*aeiou/i.test(s)&&(/\+=\s*1/.test(s)||/sum\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>Vowel count:</b> iterate through the text and count characters that belong to a vowel set/string.");
+
+addPyTask("Write a Python program to remove duplicate elements from a list.",
+ ["A set automatically keeps unique hashable values.","If order matters, you can also build a new list while checking membership.","One concise option is unique = list(set(items))."],
+ "items = [1, 2, 2, 3, 3, 4]\nunique = list(set(items))\nprint(unique)",
+ s=>(/set\s*\(/.test(s)||(/for\s+/.test(s)&&/not\s+in/.test(s)&&/append\s*\(/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Deduplication:</b> set() is concise; a membership-check loop can preserve original order.");
+
+addPyTask("Write a Python program to find the maximum number in a list.",
+ ["Python has a built-in function that returns the largest item.","A manual loop comparing each value is also valid.","Try: max(numbers)"],
+ "numbers = [4, 9, 2, 7]\nprint(max(numbers))",
+ s=>(/max\s*\(/.test(s)||(/for\s+/.test(s)&&/>/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Maximum:</b> max(list) or a comparison loop returns the largest value.");
+
+addPyTask("Write a Python program to find the minimum number in a list.",
+ ["Python has a built-in function that returns the smallest item.","A manual loop comparing each value is also valid.","Try: min(numbers)"],
+ "numbers = [4, 9, 2, 7]\nprint(min(numbers))",
+ s=>(/min\s*\(/.test(s)||(/for\s+/.test(s)&&/<\s*/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Minimum:</b> min(list) or a comparison loop returns the smallest value.");
+
+addPyTask("Write a Python program to check whether a number is positive, negative, or zero.",
+ ["There are three mutually exclusive cases.","Check > 0 and < 0; the remaining case is zero.","Use if / elif / else."],
+ "n = -4\nif n > 0:\n    print('Positive')\nelif n < 0:\n    print('Negative')\nelse:\n    print('Zero')",
+ s=>/if\s+[^:]*>\s*0\s*:/.test(s)&&/elif\s+[^:]*<\s*0\s*:/.test(s)&&/else\s*:/.test(s)&&/print\s*\(/.test(s),
+ "<b>Three-way conditional:</b> greater than zero, less than zero, otherwise zero.");
+
+addPyTask("Write a Python program to print the multiplication table of a given number, from ×1 through ×10.",
+ ["Loop from 1 through 10.","Multiply the given number by the loop counter.","Use range(1, 11) and print n * i."],
+ "n = 5\nfor i in range(1, 11):\n    print(n, 'x', i, '=', n * i)",
+ s=>/for\s+\w+\s+in\s+range\s*\(\s*1\s*,\s*11\s*\)\s*:/.test(s)&&/\*/.test(s)&&/print\s*\(/.test(s),
+ "<b>Multiplication table:</b> iterate 1–10 and multiply each counter by the chosen number.");
+
+addPyTask("Write a Python program to count the frequency of a given element in a list.",
+ ["Lists have a method that counts occurrences of a value.","A loop with a counter is also valid.","Try: items.count(target)"],
+ "items = [1, 2, 2, 3, 2]\ntarget = 2\nprint(items.count(target))",
+ s=>(/\.count\s*\(/.test(s)||(/for\s+/.test(s)&&/==/.test(s)&&/\+=\s*1/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Frequency:</b> list.count(value) gives the occurrence count; a manual counter loop is equivalent.");
+
+addPyTask("Write a Python program to find the common elements between two lists.",
+ ["You are looking for an intersection.","Sets support intersection with & or .intersection().","A loop that keeps x when x in the second list also works."],
+ "a = [1, 2, 3, 4]\nb = [3, 4, 5, 6]\ncommon = list(set(a) & set(b))\nprint(common)",
+ s=>(/set\s*\([^)]*\)\s*&\s*set\s*\(/.test(s)||/\.intersection\s*\(/.test(s)||(/for\s+/.test(s)&&/\bin\b/.test(s)&&/append\s*\(/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Intersection:</b> set intersection is concise; membership filtering is also a valid list-based solution.");
+
+addPyTask("Write a Python program to check whether a given number is a prime number.",
+ ["Prime numbers are greater than 1 and have no divisors other than 1 and themselves.","Test possible divisors from 2 up to at least the square root of n (or up to n-1).","If any divisor gives n % i == 0, the number is not prime."],
+ "n = 29\nprime = n > 1\nfor i in range(2, int(n ** 0.5) + 1):\n    if n % i == 0:\n        prime = False\n        break\nprint(prime)",
+ s=>/%\s*\w+\s*==\s*0/.test(s)&&(/for\s+/.test(s)||/all\s*\(/.test(s))&&(/>\s*1/.test(s)||/>=\s*2/.test(s))&&/print\s*\(/.test(s),
+ "<b>Prime test:</b> reject values below 2 and look for a divisor; finding one proves the number is composite.");
+
+addPyTask("Write a Python program to print all prime numbers between 1 and 100.",
+ ["You need an outer loop over candidate numbers and a primality test for each candidate.","Candidates can start at 2 and end at 100.","Use a nested divisor loop, a helper function, or all(...)."],
+ "for n in range(2, 101):\n    prime = True\n    for i in range(2, int(n ** 0.5) + 1):\n        if n % i == 0:\n            prime = False\n            break\n    if prime:\n        print(n)",
+ s=>/range\s*\(\s*2\s*,\s*101\s*\)/.test(s)&&/%/.test(s)&&(/for\s+/.test(s)||/all\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>Prime range:</b> evaluate each integer from 2 through 100 and print only those with no proper divisor.");
+
+addPyTask("Write a Python program to generate the Fibonacci series up to n terms.",
+ ["Begin with two values such as 0 and 1.","After using the current value, update both values together.","The common update is a, b = b, a + b inside a loop that runs n times."],
+ "n = 10\na, b = 0, 1\nfor _ in range(n):\n    print(a)\n    a, b = b, a + b",
+ s=>/for\s+/.test(s)&&/range\s*\(\s*\w+\s*\)/.test(s)&&/\w+\s*,\s*\w+\s*=\s*\w+\s*,\s*\w+\s*\+\s*\w+/.test(s)&&/print\s*\(/.test(s),
+ "<b>Fibonacci:</b> each next value is the sum of the previous two; tuple assignment makes the update clean.");
+
+addPyTask("Write a Python program to count the frequency of each character in a given string.",
+ ["Use a dictionary to map each character to its count.","For every character, increase its existing count or start at 1.","dict.get(ch, 0) + 1 is a useful pattern; collections.Counter is also valid."],
+ "text = 'banana'\nfreq = {}\nfor ch in text:\n    freq[ch] = freq.get(ch, 0) + 1\nprint(freq)",
+ s=>(/counter\s*\(/.test(s)||(/for\s+\w+\s+in\s+\w+/.test(s)&&(/\.get\s*\(/.test(s)||/\[\s*\w+\s*\]/.test(s))&&(/\+\s*1/.test(s)||/\+=\s*1/.test(s))))&&/print\s*\(/.test(s),
+ "<b>Character frequency:</b> count occurrences in a dictionary or use collections.Counter.");
+
+addPyTask("Write a Python program to find all duplicate characters in a string.",
+ ["A character is a duplicate when its frequency is greater than 1.","Count characters first, or compare each character with what has already been seen.","A Counter/dictionary plus count > 1 is a clean approach."],
+ "from collections import Counter\ntext = 'programming'\ncounts = Counter(text)\nduplicates = [ch for ch, count in counts.items() if count > 1]\nprint(duplicates)",
+ s=>(/counter\s*\(/.test(s)||/\.count\s*\(/.test(s)||(/for\s+/.test(s)&&/(?:seen|freq|count)/.test(s)))&&(/>\s*1/.test(s)||/in\s+.*(?:seen|duplicate)/.test(s))&&/print\s*\(/.test(s),
+ "<b>Duplicate characters:</b> identify characters whose occurrence count exceeds one.");
+
+addPyTask("Write a Python program to sort a list in ascending order without using the built-in sort() or sorted() functions.",
+ ["You need to implement the ordering logic yourself.","A simple solution compares pairs in nested loops and swaps them when they are out of order.","Bubble sort is acceptable: if nums[j] > nums[j+1], swap the two values."],
+ "nums = [5, 2, 4, 1, 3]\nfor i in range(len(nums)):\n    for j in range(0, len(nums) - i - 1):\n        if nums[j] > nums[j + 1]:\n            nums[j], nums[j + 1] = nums[j + 1], nums[j]\nprint(nums)",
+ s=>!/\.sort\s*\(|sorted\s*\(/.test(s)&&((s.match(/for\s+/g)||[]).length>=2)&&/[<>]/.test(s)&&(/\w+\s*\[[^\]]+\]\s*,\s*\w+\s*\[[^\]]+\]\s*=/.test(s)||/temp\s*=/.test(s))&&/print\s*\(/.test(s),
+ "<b>Manual sort:</b> because sort()/sorted() are forbidden, implement comparisons and swaps yourself.");
+
+addPyTask("Write a Python program to find the second largest number in a list.",
+ ["Think about distinct values if the largest value appears more than once.","One approach removes/ignores the maximum and then finds the maximum of what remains.","Another approach tracks largest and second-largest values in one pass."],
+ "nums = [10, 5, 8, 10, 7]\nunique = list(set(nums))\nunique.remove(max(unique))\nprint(max(unique))",
+ s=>(/max\s*\(/.test(s)&&(/remove\s*\(/.test(s)||/sorted\s*\(/.test(s)||/(?:second|largest)/.test(s)))||(/for\s+/.test(s)&&/(?:second|largest)/.test(s)&&/>/.test(s))&&/print\s*\(/.test(s),
+ "<b>Second largest:</b> handle duplicates deliberately, then identify the greatest value below the maximum.");
+
+addPyTask("Write a Python program to merge two dictionaries into a single dictionary.",
+ ["Modern Python supports dictionary unpacking and the | merge operator.","dict.update() is another valid method.","Examples: merged = {**d1, **d2} or merged = d1 | d2."],
+ "d1 = {'a': 1}\nd2 = {'b': 2}\nmerged = {**d1, **d2}\nprint(merged)",
+ s=>(/\{\s*\*\*\w+\s*,\s*\*\*\w+\s*\}/.test(s)||/\.update\s*\(/.test(s)||/\w+\s*\|\s*\w+/.test(s))&&/print\s*\(/.test(s),
+ "<b>Dictionary merge:</b> unpacking, update(), or the | operator can combine two dictionaries.");
+
+addPyTask("Write a Python program to find the intersection (common elements) of two lists.",
+ ["Intersection means values present in both collections.","Convert both lists to sets and use & or .intersection(), or filter one list using membership in the other.","Example: common = set(a) & set(b)."],
+ "a = [1, 2, 3, 4]\nb = [3, 4, 5]\ncommon = list(set(a) & set(b))\nprint(common)",
+ s=>(/set\s*\([^)]*\)\s*&\s*set\s*\(/.test(s)||/\.intersection\s*\(/.test(s)||(/for\s+/.test(s)&&/\bin\b/.test(s)))&&/print\s*\(/.test(s),
+ "<b>List intersection:</b> keep values that are present in both inputs.");
+
+addPyTask("Write a Python program to remove all spaces from a given string.",
+ ["Strings have a replacement method.","Replace a literal space with an empty string.","Try: text.replace(' ', '')"],
+ "text = 'hello world from python'\nresult = text.replace(' ', '')\nprint(result)",
+ s=>(/\.replace\s*\(\s*['\"]\s['\"]\s*,\s*['\"]{2}\s*\)/.test(s)||/['\"]{2}\.join\s*\([^)]*\.split\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>Remove spaces:</b> replace spaces with an empty string; split/join is another valid approach.");
+
+addPyTask("Write a Python program to count the total number of words in a sentence.",
+ ["split() with no argument separates on whitespace.","The resulting list contains the words.","Count that list using len()."],
+ "sentence = 'Python is useful for cloud automation'\nwords = sentence.split()\nprint(len(words))",
+ s=>/\.split\s*\(\s*\)/.test(s)&&/len\s*\(/.test(s)&&/print\s*\(/.test(s),
+ "<b>Word count:</b> split the sentence into words, then take the length of the resulting list.");
+
+addPyTask("Write a Python program to find the sum of all even numbers in a list.",
+ ["Filter numbers using n % 2 == 0.","Then add only the values that pass that test.","A loop accumulator or sum(n for n in numbers if n % 2 == 0) is valid."],
+ "numbers = [1, 2, 3, 4, 5, 6]\ntotal = sum(n for n in numbers if n % 2 == 0)\nprint(total)",
+ s=>/%\s*2\s*==\s*0/.test(s)&&(/sum\s*\(/.test(s)||/\+=/.test(s))&&/print\s*\(/.test(s),
+ "<b>Even sum:</b> filter for even values and accumulate only those values.");
+
+addPyTask("Write a Python program to flatten a nested list by one level into a single list. Example: [[1, 2], [3, 4], [5]] → [1, 2, 3, 4, 5].",
+ ["Each inner list contributes its individual items to the output.","Use two loops, list.extend(), or a nested list comprehension.","Comprehension shape: [item for sublist in nested for item in sublist]."],
+ "nested = [[1, 2], [3, 4], [5]]\nflat = [item for sublist in nested for item in sublist]\nprint(flat)",
+ s=>(((s.match(/for\s+/g)||[]).length>=2&&/\[.*for.*for.*\]/s.test(s))||(/for\s+/.test(s)&&/\.extend\s*\(/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Flatten one level:</b> iterate through each sublist and then through each item, or extend the result with each sublist.");
+
+addPyTask("Write a Python program to check whether two strings are anagrams of each other.",
+ ["Anagrams contain the same characters with the same frequencies, usually ignoring order.","Sort normalized strings and compare them, or compare character counts.","sorted(s1) == sorted(s2) is a common solution."],
+ "s1 = 'listen'\ns2 = 'silent'\nprint(sorted(s1) == sorted(s2))",
+ s=>(/sorted\s*\([^)]*\)\s*==\s*sorted\s*\(/.test(s)||(/counter\s*\(/.test(s)&&/==/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Anagram:</b> after normalization, the two strings must have identical character multisets.");
+
+addPyTask("Write a Python program to find the missing number in a sequence containing the numbers 1 through n with exactly one number missing.",
+ ["Compare what the complete sequence should contain with what is present.","You can use the arithmetic-series sum n*(n+1)//2, or a set difference.","Missing = expected total - actual total is a common solution."],
+ "nums = [1, 2, 3, 5, 6]\nn = 6\nmissing = n * (n + 1) // 2 - sum(nums)\nprint(missing)",
+ s=>((/\*\s*\([^)]*\+\s*1\)\s*\/\/\s*2/.test(s)&&/sum\s*\(/.test(s))||(/set\s*\(\s*range\s*\(/.test(s)&&/-\s*set\s*\(/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Missing number:</b> compare the expected 1..n values or expected total with the values actually present.");
+
+addPyTask("Write a Python program to count the number of uppercase and lowercase letters in a string.",
+ ["Each string character can report whether it is uppercase or lowercase.","Use ch.isupper() and ch.islower().","Maintain separate upper and lower counters."],
+ "text = 'Hello World'\nupper = lower = 0\nfor ch in text:\n    if ch.isupper():\n        upper += 1\n    elif ch.islower():\n        lower += 1\nprint(upper, lower)",
+ s=>/\.isupper\s*\(\s*\)/.test(s)&&/\.islower\s*\(\s*\)/.test(s)&&(/\+=\s*1/.test(s)||/sum\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>Case counting:</b> isupper() and islower() classify alphabetic characters without treating punctuation as letters.");
+
+addPyTask("Write a Python program to find the longest word in a sentence.",
+ ["First obtain the individual words with split().","max() can choose an item based on a key function.","Try: max(sentence.split(), key=len)."],
+ "sentence = 'Python makes automation straightforward'\nlongest = max(sentence.split(), key=len)\nprint(longest)",
+ s=>(/max\s*\([^)]*key\s*=\s*len/.test(s)||(/\.split\s*\(/.test(s)&&/for\s+/.test(s)&&/len\s*\(/.test(s)&&/>/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Longest word:</b> compare words by len(), either with max(..., key=len) or a manual loop.");
+
+addPyTask("Write a Python program to reverse each word in a sentence without changing the order of the words. Example: `hello world` → `olleh dlrow`.",
+ ["Split the sentence into words first.","Reverse each individual word, not the whole sentence.","Join the transformed words back with spaces."],
+ "sentence = 'hello world'\nresult = ' '.join(word[::-1] for word in sentence.split())\nprint(result)",
+ s=>/\.split\s*\(\s*\)/.test(s)&&/\[\s*::\s*-1\s*\]/.test(s)&&/\.join\s*\(/.test(s)&&/print\s*\(/.test(s),
+ "<b>Reverse each word:</b> preserve word order while reversing the characters inside each token.");
+
+addPyTask("Write a Python program to check whether a list is sorted in ascending order.",
+ ["Every adjacent pair must satisfy left <= right.","One solution compares the list with sorted(list).","Another uses all(a <= b for a, b in zip(items, items[1:]))."],
+ "items = [1, 2, 2, 5, 8]\nis_sorted = all(a <= b for a, b in zip(items, items[1:]))\nprint(is_sorted)",
+ s=>(/==\s*sorted\s*\(/.test(s)||/sorted\s*\([^)]*\)\s*==/.test(s)||(/all\s*\(/.test(s)&&/<=/.test(s)&&/zip\s*\(/.test(s)))&&/print\s*\(/.test(s),
+ "<b>Ascending check:</b> either compare with a sorted copy or verify every adjacent pair is non-decreasing.");
+
+addPyTask("Write a Python program to find the common keys between two dictionaries.",
+ ["Dictionary key views behave like sets for intersection operations.","Use d1.keys() & d2.keys(), set(d1) & set(d2), or .intersection().","Print or store the resulting shared keys."],
+ "d1 = {'a': 1, 'b': 2}\nd2 = {'b': 20, 'c': 30}\ncommon = d1.keys() & d2.keys()\nprint(common)",
+ s=>(/\.keys\s*\(\s*\)\s*&\s*\w+\.keys\s*\(\s*\)/.test(s)||/set\s*\(\s*\w+\s*\)\s*&\s*set\s*\(/.test(s)||/\.intersection\s*\(/.test(s))&&/print\s*\(/.test(s),
+ "<b>Common dictionary keys:</b> dictionary key views support set-style intersection.");
+
 // ---- 16 additional genuine Bash scripting exercises (20 total with the original 4) ----
 addBashTask("In Bash, write a range-based for loop that prints the numbers 1 through 10.",
  ["The notes use brace expansion for this example.","Loop shape: for n in {1..10}; do ...; done","Echo the loop variable inside the body."],
@@ -10020,8 +10309,10 @@ function renderQuestion(){
         (isCode
           ? '<textarea id="cmdInput" class="bash-input" placeholder="' + (q.type === 'python' ? '# python code…' : '#!/bin/bash&#10;…') + '" spellcheck="false" autocapitalize="off"></textarea>' +
             '<div class="editor-toolbar"><button class="tool-btn" onclick="showCurrentOutput()">Show my output</button>' +
+            '<button class="tool-btn indent-btn" onclick="editorIndentButton(1)" title="Indent selected/current line by 4 spaces">⇥ Indent</button>' +
+            '<button class="tool-btn indent-btn" onclick="editorIndentButton(-1)" title="Outdent selected/current line">⇤ Outdent</button>' +
             (q.type === 'bash' ? '<button class="tool-btn" onclick="openScriptViEditor()">Edit script in vi</button>' : '') +
-            '<span class="editor-help">Tab = indent · Shift+Tab = outdent · Ctrl/⌘+Enter = submit</span></div><div id="simOutput"></div>'
+            '<span class="editor-help">Mobile: use Indent/Outdent · Keyboard: Tab/Shift+Tab · Ctrl/⌘+Enter = submit</span></div><div id="simOutput"></div>'
           : '<input type="text" id="cmdInput" class="cmd-input" placeholder="' + (isShort ? 'answer in your own words…' : 'type the command…') + '" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
         '<div class="btn-group">' +
           '<button class="giveup-btn" id="giveupBtn" onclick="giveUp()">Give up</button>' +
